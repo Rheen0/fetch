@@ -25,6 +25,7 @@ interface UserProfile {
   onboardingCompleted: boolean;
   studentId?: number;
   securityId?: number;
+  avatarUrl?: string | null;
 }
 
 function DashboardContent() {
@@ -51,7 +52,7 @@ function DashboardContent() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("*")
+        .select("*, avatar_url")
         .eq("id", authUser.id)
         .single();
 
@@ -77,6 +78,7 @@ function DashboardContent() {
         employeeId: profile.employee_id,
         department: profile.department,
         onboardingCompleted: profile.onboarding_completed,
+        avatarUrl: profile.avatar_url,
       };
 
       if (profile.user_type === "student") {
@@ -171,10 +173,20 @@ function DashboardContent() {
               {user.userType !== "admin" && (
                 <Link
                   href="/profile"
-                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  className="inline-flex items-center gap-2 rounded-full transition-opacity hover:opacity-80"
+                  title="View Profile"
                 >
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Profile</span>
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={`${user.firstName} ${user.lastName}`}
+                      className="h-10 w-10 rounded-full border-2 border-gray-300 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-300 bg-gray-100">
+                      <User className="h-5 w-5 text-gray-600" />
+                    </div>
+                  )}
                 </Link>
               )}
               <form action={logout}>

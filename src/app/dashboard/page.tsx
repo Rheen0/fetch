@@ -25,7 +25,7 @@ const getUserTypeLabel = (type: string) => {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { message?: string; success?: string; confirmed?: string };
+  searchParams: Promise<{ message?: string; success?: string; confirmed?: string }>;
 }) {
   const { user, profile, error } = await getCachedUserData();
 
@@ -37,9 +37,10 @@ export default async function DashboardPage({
     redirect("/onboarding");
   }
 
-  const message = searchParams.message;
-  const success = searchParams.success;
-  const confirmed = searchParams.confirmed;
+  const params = await searchParams;
+  const message = params.message;
+  const success = params.success;
+  const confirmed = params.confirmed;
 
   return (
     <>

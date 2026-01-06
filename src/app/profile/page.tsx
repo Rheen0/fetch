@@ -1,3 +1,4 @@
+// filepath: src/app/profile/page.tsx
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { logout } from "../(auth)/actions";
+import Image from "next/image";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -49,19 +51,33 @@ export default async function ProfilePage() {
         {/* Profile Card */}
         <div className="mx-auto mt-8 max-w-md px-4">
           <div className="flex flex-col items-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-lg">
-              <User className="h-12 w-12 text-gray-600" />
+            <div className="h-24 w-24 overflow-hidden rounded-full bg-white shadow-lg">
+              {profile.avatar_url ? (
+                <Image
+                  src={profile.avatar_url}
+                  alt="Profile"
+                  width={96}
+                  height={96}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <User className="h-12 w-12 text-gray-600" />
+                </div>
+              )}
             </div>
             <h2 className="mt-4 text-2xl font-bold text-white">
               {profile.first_name} {profile.last_name}
             </h2>
             <p className="mt-1 text-sm text-red-100">{user.email}</p>
             {/* User Type Badge */}
-            <div className="mt-4 text-center">
+            <div className="mx-auto max-w-md px-4 text-center pb-8">
               <span className="inline-block rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-800">
                 {profile.user_type === "student"
                   ? "Student"
-                  : "Security Personnel"}
+                  : profile.user_type === "security"
+                  ? "Security Personnel"
+                  : "Administrator"}
               </span>
             </div>
           </div>

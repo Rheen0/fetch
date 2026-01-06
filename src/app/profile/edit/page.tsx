@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileForm } from "@/components/profile/profile-form";
 import Link from "next/link";
-import { ChevronLeft, User } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 export default async function EditProfilePage() {
   const supabase = await createClient();
@@ -36,18 +36,9 @@ export default async function EditProfilePage() {
         </div>
       </div>
 
-      {/* Profile Avatar */}
+      {/* Profile */}
       <div className="mx-auto max-w-md px-4 py-8">
-        <div className="flex justify-center">
-          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gray-200">
-            <User className="h-16 w-16 text-gray-600" />
-          </div>
-        </div>
-      </div>
-
-      {/* Form */}
-      <div className="mx-auto max-w-md px-4 pb-8">
-        <ProfileForm profile={profile} email={user.email!} />
+        <ProfileForm profile={profile} email={user.email!} userId={user.id} />
       </div>
     </div>
   );

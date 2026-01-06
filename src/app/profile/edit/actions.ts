@@ -11,6 +11,7 @@ export async function updateProfile(formData: FormData) {
   const firstName = formData.get("firstName") as string;
   const lastName = formData.get("lastName") as string;
   const phone = formData.get("phone") as string;
+  const avatarUrl = formData.get("avatarUrl") as string | null;
 
   // Get user email
   const {
@@ -28,6 +29,11 @@ export async function updateProfile(formData: FormData) {
     last_name: lastName,
     phone: phone || null,
   };
+
+  // Add avatar URL if provided
+  if (avatarUrl) {
+    profileData.avatar_url = avatarUrl;
+  }
 
   // Add type-specific fields and update legacy tables
   if (userType === "student") {
@@ -92,6 +98,7 @@ export async function updateProfile(formData: FormData) {
   }
 
   revalidatePath("/profile");
+  revalidatePath("/profile/edit");
   revalidatePath("/dashboard");
   return { success: true };
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile } from "@/app/profile/edit/actions";
+import { uploadAvatar } from "@/utils/supabase/storage";
 import { toast } from "sonner";
-import { Pencil } from "lucide-react";
+import { Pencil, Camera, User } from "lucide-react";
+import Image from "next/image";
 
 interface ProfileFormProps {
   profile: {
@@ -17,20 +19,75 @@ interface ProfileFormProps {
     employee_id: string | null;
     department: string | null;
     employment_date: string | null;
+    avatar_url: string | null;
   };
   email: string;
+  userId: string;
 }
-
-export function ProfileForm({ profile, email }: ProfileFormProps) {
+export function ProfileForm({ profile, email, userId }: ProfileFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large", {
+        description: "Please choose an image smaller than 5MB",
+      });
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Invalid file type", {
+        description: "Please choose an image file",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      const { url, error } = await uploadAvatar(file, userId);
+
+      if (error) {
+        toast.error("Upload failed", {
+          description: error.message,
+        });
+        return;
+      }
+
+      if (url) {
+        setAvatarUrl(url);
+        toast.success("Avatar uploaded!", {
+          description: "Your profile picture has been updated.",
+        });
+        router.refresh();
+      }
+    } catch (err) {
+      toast.error("Error", {
+        description: "Failed to upload avatar",
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    if (avatarUrl) {
+      formData.append("avatarUrl", avatarUrl);
+    }
 
     try {
       const result = await updateProfile(formData);
@@ -58,6 +115,46 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="userId" value={profile.id} />
       <input type="hidden" name="userType" value={profile.user_type} />
+
+      {/* Avatar Upload */}
+      <div className="flex justify-center">
+        <div className="relative">
+          <div className="h-32 w-32 overflow-hidden rounded-full bg-gray-200">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt="Profile"
+                width={128}
+                height={128}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <User className="h-16 w-16 text-gray-600" />
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingAvatar}
+            className="absolute bottom-0 right-0 rounded-full bg-fetch-red p-3 text-white shadow-lg transition-colors hover:bg-red-700 disabled:opacity-50"
+          >
+            {uploadingAvatar ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <Camera className="h-5 w-5" />
+            )}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            className="hidden"
+          />
+        </div>
+      </div>
 
       {/* Full Name */}
       <div className="rounded-lg bg-white p-4 shadow-sm">
@@ -272,7 +369,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 rounded-lg bg-fetch-red px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-red-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
         >
           {loading ? "Saving..." : "Save"}
         </button>

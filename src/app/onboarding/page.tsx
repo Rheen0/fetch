@@ -1,25 +1,18 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCachedUser, getCachedProfile } from "@/utils/supabase/cached-queries";
 import { redirect } from "next/navigation";
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
 
 export default async function OnboardingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, error: userError } = await getCachedUser();
 
-  if (!user) {
+  if (userError || !user) {
     redirect("/login");
   }
 
   // Check if profile exists and is completed
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const { profile, error: profileError } = await getCachedProfile(user.id);
 
-  if (profile?.onboarding_completed) {
+  if (!profileError && profile?.onboarding_completed) {
     redirect("/dashboard");
   }
 

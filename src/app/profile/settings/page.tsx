@@ -1,24 +1,15 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCachedUserData } from "@/utils/supabase/cached-queries";
 import { redirect } from "next/navigation";
 import { SettingsContent } from "@/components/profile/settings-content";
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, profile, error } = await getCachedUserData();
 
-  if (!user) {
+  if (error || !user || !profile) {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile) {
+  if (!profile.onboarding_completed) {
     redirect("/onboarding");
   }
 

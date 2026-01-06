@@ -1,26 +1,17 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCachedUserData } from "@/utils/supabase/cached-queries";
 import { redirect } from "next/navigation";
 import { ProfileForm } from "@/components/profile/profile-form";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
 export default async function EditProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, profile, error } = await getCachedUserData();
 
-  if (!user) {
+  if (error || !user || !profile) {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile) {
+  if (!profile.onboarding_completed) {
     redirect("/onboarding");
   }
 

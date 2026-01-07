@@ -107,22 +107,26 @@ export function ReportLostModal({ studentId, onClose }: ReportLostModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 hover:bg-gray-100 z-10"
-        >
-          <X className="h-5 w-5" />
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 bg-white border-b px-6 py-4 rounded-t-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">Report Lost Item</h2>
+              <p className="text-sm text-gray-500 mt-1">Help us find your missing item</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
+        </div>
 
-        <h2 className="mb-4 text-2xl font-bold text-gray-900">
-          Report Lost Item
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
-            <Label htmlFor="item_name">Item Name *</Label>
+            <Label htmlFor="item_name" className="text-sm font-medium text-gray-900">Item Name *</Label>
             <Input
               id="item_name"
               value={formData.item_name}
@@ -130,19 +134,20 @@ export function ReportLostModal({ studentId, onClose }: ReportLostModalProps) {
                 setFormData({ ...formData, item_name: e.target.value })
               }
               placeholder="e.g., Blue Backpack, iPhone 13"
+              className="mt-2 h-11"
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="category">Category *</Label>
+            <Label htmlFor="category" className="text-sm font-medium text-gray-900">Category *</Label>
             <Select
               value={formData.category}
               onValueChange={(value) =>
                 setFormData({ ...formData, category: value })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-2 h-11">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
@@ -158,9 +163,9 @@ export function ReportLostModal({ studentId, onClose }: ReportLostModalProps) {
           <div>
             <Label
               htmlFor="last_seen_location"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-sm font-medium text-gray-900"
             >
-              <MapPin className="h-4 w-4" />
+              <MapPin className="h-4 w-4 text-fetch-red" />
               Last Seen Location
             </Label>
             <Select
@@ -169,7 +174,7 @@ export function ReportLostModal({ studentId, onClose }: ReportLostModalProps) {
                 setFormData({ ...formData, last_seen_location: value })
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-2 h-11">
                 <SelectValue placeholder="Where did you last see it?" />
               </SelectTrigger>
               <SelectContent>
@@ -180,13 +185,13 @@ export function ReportLostModal({ studentId, onClose }: ReportLostModalProps) {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-2">
               Optional, but helps us find matches
             </p>
           </div>
 
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-sm font-medium text-gray-900">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -194,41 +199,51 @@ export function ReportLostModal({ studentId, onClose }: ReportLostModalProps) {
                 setFormData({ ...formData, description: e.target.value })
               }
               placeholder="Describe your lost item in detail (color, brand, distinctive features)..."
-              rows={3}
+              rows={4}
+              className="mt-2 resize-none"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-2">
               Include colors, brands, or unique identifiers
             </p>
           </div>
 
           <div>
-            <Label>Upload Image</Label>
-            <ImageUpload
-              onImageUploaded={(url) =>
-                setFormData({ ...formData, image_url: url })
-              }
-              bucket="items"
-              userId={studentId.toString()}
-              itemType="lost"
-            />
+            <Label className="text-sm font-medium text-gray-900">Upload Image</Label>
+            <div className="mt-2">
+              <ImageUpload
+                onImageUploaded={(url) =>
+                  setFormData({ ...formData, image_url: url })
+                }
+                bucket="items"
+                userId={studentId.toString()}
+                itemType="lost"
+              />
+            </div>
           </div>
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1"
+              className="flex-1 h-11"
               disabled={loading}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-fetch-red hover:bg-fetch-red/90"
+              className="flex-1 h-11 bg-fetch-red hover:bg-fetch-red/90 text-white font-medium"
               disabled={loading}
             >
-              {loading ? "Reporting..." : "Report Item"}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Reporting...
+                </div>
+              ) : (
+                "Report Item"
+              )}
             </Button>
           </div>
         </form>

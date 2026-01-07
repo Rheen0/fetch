@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StudentLayout } from "@/components/layouts/student-layout";
+import { ReportLostModal } from "@/components/modals/report-lost-modal";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -34,6 +35,8 @@ import {
   cancelLostReport,
   reactivateLostReport,
 } from "@/app/dashboard/reports/actions";
+import { StatsSkeleton } from "@/components/skeletons/stats-skeleton";
+import { ReportListSkeleton } from "@/components/skeletons/report-card-skeleton";
 import type { LostItemReport } from "@/lib/types";
 
 interface StudentReportsProps {
@@ -48,6 +51,7 @@ export function StudentReports({ studentId }: StudentReportsProps) {
   const [activeReports, setActiveReports] = useState<ReportWithMatches[]>([]);
   const [closedReports, setClosedReports] = useState<ReportWithMatches[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [cancelDialog, setCancelDialog] = useState<{
     open: boolean;
     reportId: number | null;
@@ -145,85 +149,116 @@ export function StudentReports({ studentId }: StudentReportsProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fetch-red mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your reports...</p>
+      <StudentLayout 
+        onReportClick={() => setIsModalOpen(true)}
+        currentPath="reports"
+      >
+        <div className="bg-white border-b">
+          <div className="max-w-6xl mx-auto px-4 py-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-fetch-red">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+              </Link>
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">My Reports</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Track and manage your lost item reports
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <StatsSkeleton />
+          <div className="mt-6">
+            <ReportListSkeleton />
+          </div>
+        </div>
+      </StudentLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <StudentLayout 
+      onReportClick={() => setIsModalOpen(true)}
+      currentPath="reports"
+    >
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="p-4">
-          <div className="flex items-center gap-3 mb-3">
+      <div className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="flex items-center gap-4 mb-4">
             <Link href="/dashboard">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-fetch-red">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
               </Button>
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Reports</h1>
-              <p className="text-sm text-gray-600">
-                View and manage your lost item reports
-              </p>
-            </div>
           </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <Card className="border-fetch-red/20">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-fetch-red">
-                  {activeReports.length}
-                </div>
-                <div className="text-xs text-gray-600 mt-1">Active</div>
-              </CardContent>
-            </Card>
-            <Card className="border-gray-200">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">
-                  {activeReports.reduce((sum, r) => sum + r.matchCount, 0)}
-                </div>
-                <div className="text-xs text-gray-600 mt-1">Matches</div>
-              </CardContent>
-            </Card>
-            <Card className="border-gray-200">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">
-                  {closedReports.length}
-                </div>
-                <div className="text-xs text-gray-600 mt-1">Closed</div>
-              </CardContent>
-            </Card>
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">My Reports</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Track and manage your lost item reports
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="p-4">
+      {/* Stats Overview */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
+            <p className="text-2xl font-bold text-gray-900">{activeReports.length}</p>
+            <p className="text-xs text-gray-500 mt-1">Active Reports</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
+            <p className="text-2xl font-bold text-gray-900">{closedReports.length}</p>
+            <p className="text-xs text-gray-500 mt-1">Closed Reports</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
+            <p className="text-2xl font-bold text-gray-900">
+              {activeReports.reduce((sum, r) => sum + r.matchCount, 0)}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Total Matches</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
+            <p className="text-2xl font-bold text-gray-900">
+              {activeReports.length + closedReports.length}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">All Reports</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="active">
-              Active Reports ({activeReports.length})
+          <TabsList className="w-full grid grid-cols-2 bg-gray-100 rounded-lg p-1">
+            <TabsTrigger 
+              value="active"
+              className="rounded-md data-[state=active]:bg-white data-[state=active]:text-fetch-red data-[state=active]:shadow-sm"
+            >
+              Active ({activeReports.length})
             </TabsTrigger>
-            <TabsTrigger value="closed">
-              Closed Reports ({closedReports.length})
+            <TabsTrigger 
+              value="closed"
+              className="rounded-md data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+            >
+              Closed ({closedReports.length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="active" className="space-y-4">
+          <TabsContent value="active" className="space-y-4 mt-6">
             {activeReports.length === 0 ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  You don&apos;t have any active reports. Report a lost item to
-                  get started!
-                </AlertDescription>
-              </Alert>
+              <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No active reports</h3>
+                <p className="text-sm text-gray-500">
+                  Report a lost item to start finding matches!
+                </p>
+              </div>
             ) : (
               activeReports.map((report) => (
                 <ReportCard
@@ -240,14 +275,17 @@ export function StudentReports({ studentId }: StudentReportsProps) {
             )}
           </TabsContent>
 
-          <TabsContent value="closed" className="space-y-4">
+          <TabsContent value="closed" className="space-y-4 mt-6">
             {closedReports.length === 0 ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  You don&apos;t have any closed reports.
-                </AlertDescription>
-              </Alert>
+              <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No closed reports</h3>
+                <p className="text-sm text-gray-500">
+                  Closed reports will appear here
+                </p>
+              </div>
             ) : (
               closedReports.map((report) => (
                 <ReportCard
@@ -319,7 +357,15 @@ export function StudentReports({ studentId }: StudentReportsProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+
+      {/* Report Lost Modal */}
+      {isModalOpen && (
+        <ReportLostModal
+          studentId={studentId}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+    </StudentLayout>
   );
 }
 
@@ -346,7 +392,7 @@ function ReportCard({ report, onCancel, onReactivate }: ReportCardProps) {
       <CardContent className="p-0">
         <div className="flex gap-4 p-4">
           {/* Image */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             {report.image_url ? (
               <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100">
                 <Image

@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ReportLostModal } from "@/components/modals/report-lost-modal";
 import { AllMatchesModal } from "@/components/modals/all-matches-modal";
 import Link from "next/link";
-import { Search, Bell, Home, User, Plus, Eye } from "lucide-react";
+import { Search, Bell, Home, User, Plus, Eye, FileText } from "lucide-react";
 import { Marquee } from "@/components/ui/marquee";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -316,7 +316,10 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
               // Static grid for 1-3 items
               <div className="flex flex-wrap gap-4 justify-center">
                 {filteredMatches.map((match) => (
-                  <div key={`${match.reportId}-${match.found_id}`} className="flex justify-center w-full sm:w-auto">
+                  <div
+                    key={`${match.reportId}-${match.found_id}`}
+                    className="flex justify-center w-full sm:w-auto"
+                  >
                     <BestMatchCard
                       match={match}
                       onViewAll={() =>
@@ -386,10 +389,10 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
 
           <DockIcon>
             <Link
-              href="/profile"
+              href="/dashboard/reports"
               className="flex items-center justify-center text-gray-600 hover:text-fetch-red transition-colors"
             >
-              <User className="w-6 h-6" />
+              <FileText className="w-6 h-6" />
             </Link>
           </DockIcon>
         </Dock>

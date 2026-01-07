@@ -1,8 +1,7 @@
 import { getCachedUserData } from "@/utils/supabase/cached-queries";
 import { redirect } from "next/navigation";
 import { getStudentMatches } from "@/lib/fetchers";
-import { MatchList } from "@/components/home/student/match-list";
-import { EmptyState } from "@/components/home/student/empty-state";
+import { MatchesClient } from "@/components/matches/matches-client";
 
 // Revalidate every 60 seconds
 export const revalidate = 60;
@@ -23,35 +22,16 @@ export default async function MatchesPage() {
   // 3. Get student's matches
   const matchResults = await getStudentMatches(profile.studentId);
 
-  // 4. No reports
-  if (matchResults.length === 0) {
-    return <EmptyState type="no-reports" />;
-  }
+  // 4. Determine state
+  const hasNoReports = matchResults.length === 0;
+  const hasNoMatches = !hasNoReports && matchResults.every((r) => r.matches.length === 0);
 
-  // 5. Check if any matches exist
-  const hasAnyMatches = matchResults.some((r) => r.matches.length > 0);
-
-  if (!hasAnyMatches) {
-    return <EmptyState type="no-matches" />;
-  }
-
-  // 6. Render matches
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Your Matches</h1>
-          <p className="mt-2 text-gray-600">
-            We found potential matches for your lost items
-          </p>
-        </div>
-
-        <div className="space-y-8">
-          {matchResults.map((result) => (
-            <MatchList key={result.report.report_id} data={result} />
-          ))}
-        </div>
-      </div>
-    </div>
+    <MatchesClient
+      studentId={profile.studentId}
+      matchResults={matchResults}
+      hasNoReports={hasNoReports}
+      hasNoMatches={hasNoMatches}
+    />
   );
 }

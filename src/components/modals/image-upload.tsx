@@ -11,6 +11,7 @@ interface ImageUploadProps {
   itemType: 'lost' | 'found';
   onImageUploaded: (url: string, path: string) => void;
   currentImage?: string | null;
+  bucket: string;
 }
 
 export function ImageUpload({ userId, itemType, onImageUploaded, currentImage }: ImageUploadProps) {

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { logout } from "../(auth)/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, LogOut, User } from "lucide-react";
-import { StudentHome } from "@/components/home/student-home";
+import { StudentHome } from "@/components/home/student/student-home";
 import { SecurityHome } from "@/components/home/security-home";
 import { AdminHome } from "@/components/home/admin-home";
 import Link from "next/link";

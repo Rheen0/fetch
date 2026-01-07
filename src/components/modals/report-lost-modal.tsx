@@ -1,16 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,167 +12,131 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle, Upload, X } from "lucide-react";
-import Image from "next/image";
-
-const CATEGORIES = [
-  "Electronics",
-  "Identification",
-  "Academic",
-  "Personal Items",
-  "Accessories",
-  "Clothing",
-  "Keys",
-  "Other",
-];
+import { toast } from "sonner";
+import { X, MapPin } from "lucide-react";
+import { ImageUpload } from "./image-upload";
+import { reportLostItem } from "@/app/dashboard/actions";
 
 interface ReportLostModalProps {
   studentId: number;
-  onSuccess?: () => void;
-  onClose?: () => void;
+  onClose: () => void;
 }
 
-export function ReportLostModal({
-  studentId,
-  onSuccess,
-  onClose,
-}: ReportLostModalProps) {
-  const [open, setOpen] = useState(onClose ? true : false);
-  const [loading, setLoading] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+const CATEGORIES = [
+  "Electronics",
+  "Clothing",
+  "Accessories",
+  "Books",
+  "Documents",
+  "Keys",
+  "Bags",
+  "Sports Equipment",
+  "School Supplies",
+  "Personal",
+  "Identification",
+  "Academic",
+  "Personal Items",
+  "Other",
+];
+
+const COMMON_LOCATIONS = [
+  "Library",
+  "Cafeteria",
+  "Student Union",
+  "Gym/Sports Complex",
+  "Classroom Building",
+  "Computer Lab",
+  "Parking Lot",
+  "Dormitory",
+  "Lecture Hall",
+  "Science Building",
+  "Engineering Building",
+  "Math Building",
+  "Student Center",
+  "Other",
+];
+
+export function ReportLostModal({ studentId, onClose }: ReportLostModalProps) {
   const [formData, setFormData] = useState({
-    itemName: "",
+    item_name: "",
     description: "",
     category: "",
-    location: "",
-    dateLost: "",
+    last_seen_location: "",
+    image_url: "",
   });
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-  };
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.item_name || !formData.category) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const supabase = createClient();
+      const result = await reportLostItem({
+        studentId,
+        ...formData,
+      });
 
-      let imageUrl = null;
-
-      // Upload image if provided
-      if (imageFile) {
-        const fileExt = imageFile.name.split(".").pop();
-        const fileName = `${studentId}_${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("lost-items")
-          .upload(fileName, imageFile);
-
-        if (uploadError) throw new Error("Failed to upload image");
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("lost-items").getPublicUrl(fileName);
-
-        imageUrl = publicUrl;
+      if (!result.success) {
+        throw new Error(result.error || "Failed to report item");
       }
 
-      // Insert lost item report
-      const { error: insertError } = await supabase
-        .from("LostItemReport")
-        .insert({
-          student_id: studentId,
-          item_name: formData.itemName,
-          description: `${formData.description}\n\nLast seen at: ${formData.location}\nLast seen date: ${formData.dateLost}`,
-          image_url: imageUrl,
-          category: formData.category,
-          status: "active",
-        });
-
-      if (insertError) throw new Error("Failed to submit report");
-
-      toast.success("Success!", {
-        description: "Your lost item report has been submitted.",
+      toast.success("Lost item reported successfully!", {
+        description: "We're searching for matches...",
       });
 
-      // Reset form
-      setFormData({
-        itemName: "",
-        description: "",
-        category: "",
-        location: "",
-        dateLost: "",
-      });
-      setImageFile(null);
-      setImagePreview(null);
-      setOpen(false);
-      if (onClose) onClose();
-      onSuccess?.();
-    } catch (error: any) {
-      toast.error("Error", {
-        description:
-          error.message || "Failed to submit report. Please try again.",
-      });
+      onClose();
+
+      // Refresh after a short delay to show toast
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+      console.error("Error reporting lost item:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to report lost item"
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen && onClose) {
-        onClose();
-      }
-    }}>
-      {!onClose && (
-        <DialogTrigger asChild>
-          <Button className="w-full" size="lg">
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Report Lost Item
-          </Button>
-        </DialogTrigger>
-      )}
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Report Lost Item</DialogTitle>
-          <DialogDescription>
-            Provide details about your lost item to help us find it.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-full p-1 hover:bg-gray-100 z-10"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <h2 className="mb-4 text-2xl font-bold text-gray-900">
+          Report Lost Item
+        </h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="itemName">Item Name *</Label>
+            <Label htmlFor="item_name">Item Name *</Label>
             <Input
-              id="itemName"
-              required
-              value={formData.itemName}
+              id="item_name"
+              value={formData.item_name}
               onChange={(e) =>
-                setFormData({ ...formData, itemName: e.target.value })
+                setFormData({ ...formData, item_name: e.target.value })
               }
-              placeholder="e.g., Blue Backpack, iPhone 13, Student ID"
+              placeholder="e.g., Blue Backpack, iPhone 13"
+              required
             />
           </div>
 
           <div>
             <Label htmlFor="category">Category *</Label>
             <Select
-              required
               value={formData.category}
               onValueChange={(value) =>
                 setFormData({ ...formData, category: value })
@@ -192,9 +146,9 @@ export function ReportLostModal({
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
+                {CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -202,101 +156,83 @@ export function ReportLostModal({
           </div>
 
           <div>
-            <Label htmlFor="description">Description *</Label>
+            <Label
+              htmlFor="last_seen_location"
+              className="flex items-center gap-2"
+            >
+              <MapPin className="h-4 w-4" />
+              Last Seen Location
+            </Label>
+            <Select
+              value={formData.last_seen_location}
+              onValueChange={(value) =>
+                setFormData({ ...formData, last_seen_location: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Where did you last see it?" />
+              </SelectTrigger>
+              <SelectContent>
+                {COMMON_LOCATIONS.map((location) => (
+                  <SelectItem key={location} value={location}>
+                    {location}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              Optional, but helps us find matches
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              required
-              rows={3}
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              placeholder="Provide specific details (color, brand, unique features, etc.)"
+              placeholder="Describe your lost item in detail (color, brand, distinctive features)..."
+              rows={3}
             />
-          </div>
-
-          <div>
-            <Label htmlFor="location">Last Seen Location *</Label>
-            <Input
-              id="location"
-              required
-              value={formData.location}
-              onChange={(e) =>
-                setFormData({ ...formData, location: e.target.value })
-              }
-              placeholder="e.g., Library 2nd Floor, Cafeteria, Gym"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="dateLost">Last Seen Date *</Label>
-            <Input
-              id="dateLost"
-              type="date"
-              required
-              value={formData.dateLost}
-              onChange={(e) =>
-                setFormData({ ...formData, dateLost: e.target.value })
-              }
-            />
-          </div>
-
-          <div>
-            <Label>Item Photo (Optional)</Label>
-            <p className="text-xs text-gray-500 mb-2">
-              Upload a photo to help identify your item
+            <p className="text-xs text-gray-500 mt-1">
+              Include colors, brands, or unique identifiers
             </p>
-
-            {!imagePreview ? (
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 hover:bg-gray-100">
-                <Upload className="h-8 w-8 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600">
-                  Click to upload image
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            ) : (
-              <div className="relative">
-                <Image
-                  src={imagePreview}
-                  alt="Preview"
-                  width={200}
-                  height={200}
-                  className="rounded-lg"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute right-2 top-2 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Submitting..." : "Submit Report"}
-            </Button>
+          <div>
+            <Label>Upload Image</Label>
+            <ImageUpload
+              onImageUploaded={(url) =>
+                setFormData({ ...formData, image_url: url })
+              }
+              bucket="items"
+              userId={studentId.toString()}
+              itemType="lost"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setOpen(false);
-                if (onClose) onClose();
-              }}
+              onClick={onClose}
+              className="flex-1"
+              disabled={loading}
             >
               Cancel
             </Button>
+            <Button
+              type="submit"
+              className="flex-1 bg-fetch-red hover:bg-fetch-red/90"
+              disabled={loading}
+            >
+              {loading ? "Reporting..." : "Report Item"}
+            </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

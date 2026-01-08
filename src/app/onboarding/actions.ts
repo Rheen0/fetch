@@ -63,7 +63,7 @@ export async function completeOnboarding(formData: FormData) {
 
     // Insert into SecurityPersonnel table
     const { error: securityError } = await supabase
-      .from("SecurityPersonnel")
+      .from("securitypersonnel")
       .insert({
         employee_id: employeeId,
         first_name: firstName,

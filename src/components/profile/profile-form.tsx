@@ -369,7 +369,7 @@ export function ProfileForm({ profile, email, userId }: ProfileFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 rounded-lg bg-red-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-fetch-red px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
         >
           {loading ? "Saving..." : "Save"}
         </button>

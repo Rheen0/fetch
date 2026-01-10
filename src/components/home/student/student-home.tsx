@@ -259,16 +259,11 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
         {loading ? (
           <StatsSkeleton />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatsCard
               value={stats.activeReports}
               label="Active Reports"
               variant="primary"
-            />
-            <StatsCard
-              value={stats.totalMatches}
-              label="Total Matches"
-              variant="default"
             />
             <StatsCard
               value={stats.pendingClaims}

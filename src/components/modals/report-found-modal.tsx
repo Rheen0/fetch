@@ -2,18 +2,17 @@
 
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { toast } from "sonner";
+import { uploadImage } from "@/utils/supabase/storage";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -21,233 +20,229 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Upload, X } from "lucide-react";
-import Image from "next/image";
-
-const CATEGORIES = [
-  "Electronics",
-  "Identification",
-  "Academic",
-  "Personal Items",
-  "Accessories",
-  "Clothing",
-  "Keys",
-  "Other",
-];
+import { ImageUpload } from "./image-upload";
+import { toast } from "sonner";
+import { Loader2, CheckCircle, X } from "lucide-react";
 
 interface ReportFoundModalProps {
   securityId: number;
-  onSuccess?: () => void;
+  onClose: () => void;
+  onSuccess: () => void;
 }
+
+const CATEGORIES = [
+  "Electronics",
+  "Clothing",
+  "Accessories",
+  "Books",
+  "Sports Equipment",
+  "Keys",
+  "Bags",
+  "Stationery",
+  "Personal Items",
+  "Other",
+];
 
 export function ReportFoundModal({
   securityId,
+  onClose,
   onSuccess,
 }: ReportFoundModalProps) {
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     itemName: "",
     category: "",
-    foundLocation: "",
+    description: "",
+    location: "",
   });
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.itemName || !formData.category || !formData.location) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const supabase = createClient();
 
-      let imageUrl = null;
-
       // Upload image if provided
+      let imageUrl = null;
       if (imageFile) {
-        const fileExt = imageFile.name.split(".").pop();
-        const fileName = `found_${securityId}_${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("found-items")
-          .upload(fileName, imageFile);
-
-        if (uploadError) throw new Error("Failed to upload image");
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("found-items").getPublicUrl(fileName);
-
-        imageUrl = publicUrl;
+        imageUrl = await uploadImage(imageFile, "found-items");
       }
 
       // Insert found item
-      const { error: insertError } = await supabase.from("FoundItem").insert({
-        security_id: securityId,
-        item_name: formData.itemName,
-        image_url: imageUrl,
-        category: formData.category,
-        found_location: formData.foundLocation,
-        status: "pending",
-      });
+      const { data, error } = await supabase
+        .from("founditem")
+        .insert({
+          security_id: securityId,
+          item_name: formData.itemName,
+          category: formData.category,
+          description: formData.description,
+          image_url: imageUrl,
+          found_location: formData.location,
+          found_at: new Date().toISOString(),
+          status: "pending",
+        })
+        .select()
+        .single();
 
-      if (insertError) throw new Error("Failed to submit found item");
+      if (error) throw error;
 
-      toast.success("Success!", {
-        description: "Found item has been logged successfully.",
-      });
+      // Show success state
+      setShowSuccess(true);
 
-      // Reset form
-      setFormData({
-        itemName: "",
-        category: "",
-        foundLocation: "",
-      });
-      setImageFile(null);
-      setImagePreview(null);
-      setOpen(false);
-      onSuccess?.();
+      // Wait 2 seconds then close and trigger refresh
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 2000);
     } catch (error: any) {
-      toast.error("Error", {
-        description: error.message || "Failed to submit. Please try again.",
-      });
-    } finally {
+      console.error("Error reporting found item:", error);
+      toast.error(error.message || "Failed to report found item");
       setLoading(false);
     }
   };
 
+  if (showSuccess) {
+    return (
+      <Dialog open onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Good Job
+            </h3>
+            <p className="text-sm text-gray-600 text-center">
+              You just helped someone find their lost item.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="w-full" size="lg">
-          <Package className="mr-2 h-5 w-5" />
-          Log Found Item
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Log Found Item</DialogTitle>
-          <DialogDescription>
-            Register an item that has been found on campus.
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Found Item Post</DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Image Upload */}
           <div>
-            <Label htmlFor="itemName">Item Name *</Label>
+            <Label>Add Photo</Label>
+            <ImageUpload
+              onImageSelect={setImageFile}
+              currentImage={imageFile ? URL.createObjectURL(imageFile) : null}
+            />
+          </div>
+
+          {/* Item Name */}
+          <div>
+            <Label htmlFor="itemName">
+              Item Name <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="itemName"
-              required
+              placeholder="Enter Item Name"
               value={formData.itemName}
               onChange={(e) =>
                 setFormData({ ...formData, itemName: e.target.value })
               }
-              placeholder="e.g., Blue Backpack, iPhone, Wallet"
+              required
             />
           </div>
 
+          {/* Category */}
           <div>
-            <Label htmlFor="category">Category *</Label>
+            <Label htmlFor="category">
+              Category <span className="text-red-500">*</span>
+            </Label>
             <Select
-              required
               value={formData.category}
               onValueChange={(value) =>
                 setFormData({ ...formData, category: value })
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
+                {CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          {/* Location */}
           <div>
-            <Label htmlFor="foundLocation">Found Location *</Label>
+            <Label htmlFor="location">
+              Location for collecting item{" "}
+              <span className="text-red-500">*</span>
+            </Label>
             <Input
-              id="foundLocation"
-              required
-              value={formData.foundLocation}
+              id="location"
+              placeholder="Location for collecting item"
+              value={formData.location}
               onChange={(e) =>
-                setFormData({ ...formData, foundLocation: e.target.value })
+                setFormData({ ...formData, location: e.target.value })
               }
-              placeholder="e.g., Library 2nd Floor, Main Gate"
+              required
             />
           </div>
 
+          {/* Description */}
           <div>
-            <Label>Item Photo (Required)</Label>
-            <p className="text-xs text-gray-500 mb-2">
-              Upload a clear photo of the item
-            </p>
+            <Label htmlFor="description">Item Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Enter Specific Description (e.g color, size etc.)"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              rows={4}
+            />
+          </div>
 
-            {!imagePreview ? (
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 hover:bg-gray-100">
-                <Upload className="h-8 w-8 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600">
-                  Click to upload image
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                  required
-                />
-              </label>
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-fetch-red hover:bg-fetch-red/90"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Posting...
+              </>
             ) : (
-              <div className="relative">
-                <Image
-                  src={imagePreview}
-                  alt="Preview"
-                  width={200}
-                  height={200}
-                  className="rounded-lg"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute right-2 top-2 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              "Post"
             )}
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Submitting..." : "Log Found Item"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-          </div>
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

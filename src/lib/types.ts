@@ -40,6 +40,7 @@ export interface MatchedFoundItem extends FoundItem {
 export interface LostItemWithMatches {
   report: LostItemReport;
   matches: MatchedFoundItem[];
+  studentId: number;
 }
 
 export interface StudentStats {

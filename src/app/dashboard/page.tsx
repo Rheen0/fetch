@@ -4,7 +4,7 @@ import { logout } from "../(auth)/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, LogOut, User } from "lucide-react";
 import { StudentHome } from "@/components/home/student/student-home";
-import { SecurityHome } from "@/components/home/security-home";
+import { SecurityHome } from "@/components/home/security/security-home";
 import { AdminHome } from "@/components/home/admin-home";
 import Link from "next/link";
 import { ToastHandler } from "./toast-handler";
@@ -25,7 +25,11 @@ const getUserTypeLabel = (type: string) => {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ message?: string; success?: string; confirmed?: string }>;
+  searchParams: Promise<{
+    message?: string;
+    success?: string;
+    confirmed?: string;
+  }>;
 }) {
   const { user, profile, error } = await getCachedUserData();
 

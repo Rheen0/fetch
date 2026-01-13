@@ -27,6 +27,7 @@ export function MatchList({ data }: MatchListProps) {
                 key={match.found_id}
                 match={match}
                 reportId={report.report_id}
+                studentId={studentId}
               />
             ))}
           </div>

@@ -1,19 +1,45 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import type { MatchedFoundItem } from "@/lib/types";
-import { MapPin, User, Calendar } from "lucide-react";
+import { MapPin, User, Calendar, Loader2 } from "lucide-react";
+import { createClaim } from "@/app/dashboard/claims/actions";
+import { toast } from "sonner";
 
 interface MatchCardProps {
   match: MatchedFoundItem;
   reportId: number;
+  studentId: number;
 }
 
-export function MatchCard({ match, reportId }: MatchCardProps) {
+export function MatchCard({ match, reportId, studentId }: MatchCardProps) {
+  const [claiming, setClaiming] = useState(false);
+
   const scoreColor =
     match.match_score >= 70
       ? "text-green-600"
       : match.match_score >= 50
       ? "text-yellow-600"
       : "text-orange-600";
+
+  const handleClaim = async () => {
+    setClaiming(true);
+
+    try {
+      const result = await createClaim(match.item_id, studentId);
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Claim submitted! Security will verify your request.");
+      }
+    } catch (error) {
+      toast.error("Failed to submit claim. Please try again.");
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
@@ -72,8 +98,19 @@ export function MatchCard({ match, reportId }: MatchCardProps) {
       </div>
 
       {/* Action Button */}
-      <button className="mt-4 w-full rounded-md bg-red-600 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700">
-        Claim This Item
+      <button
+        onClick={handleClaim}
+        disabled={claiming}
+        className="mt-4 w-full rounded-md bg-fetch-red py-2 text-sm font-medium text-white transition-colors hover:bg-fetch-red/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        {claiming ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Claiming...
+          </>
+        ) : (
+          "Claim This Item"
+        )}
       </button>
     </div>
   );

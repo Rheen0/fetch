@@ -19,21 +19,39 @@ export const getCachedProfile = cache(async (userId: string) => {
 
 export const getCachedStudentId = cache(async (email: string) => {
   const supabase = await createClient();
-  const { data: student } = await supabase
+  const { data: student, error } = await supabase
     .from("student")
     .select("student_id")
     .eq("email", email)
     .maybeSingle();
+  
+  if (error) {
+    console.error("Error fetching student_id:", error);
+  }
+  
+  if (!student) {
+    console.warn(`No student record found for email: ${email}`);
+  }
+  
   return student?.student_id;
 });
 
 export const getCachedSecurityId = cache(async (email: string) => {
   const supabase = await createClient();
-  const { data: security } = await supabase
+  const { data: security, error } = await supabase
     .from("securitypersonnel")
     .select("security_id")
     .eq("email", email)
     .maybeSingle();
+  
+  if (error) {
+    console.error("Error fetching security_id:", error);
+  }
+  
+  if (!security) {
+    console.warn(`No security record found for email: ${email}`);
+  }
+  
   return security?.security_id;
 });
 

@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import { ReportLostModal } from "@/components/modals/report-lost-modal";
 import { AllMatchesModal } from "@/components/modals/all-matches-modal";
 import { StudentLayout } from "@/components/layouts/student-layout";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import Link from "next/link";
 import { Search, Eye, User, Bell } from "lucide-react";
 import { Marquee } from "@/components/ui/marquee";
@@ -41,6 +42,7 @@ export function StudentHome({
     itemsClaimed: 0,
     totalMatches: 0,
   });
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{
@@ -54,6 +56,15 @@ export function StudentHome({
       const supabase = createClient();
 
       try {
+        // Fetch unread notifications count
+        const { count: notifCount } = await supabase
+          .from("notification")
+          .select("notification_id", { count: "exact", head: true })
+          .eq("student_id", studentId)
+          .eq("is_read", false);
+
+        setUnreadNotifications(notifCount || 0);
+
         // Fetch student's active reports
         const { data: reports, error: reportsError } = await supabase
           .from("lostitemreport")
@@ -98,7 +109,7 @@ export function StudentHome({
             }
 
             if (!matches || matches.length === 0) {
-              matchResults.push({ report, matches: [] });
+              matchResults.push({ report, matches: [], studentId });
               continue;
             }
 
@@ -153,7 +164,7 @@ export function StudentHome({
               })
               .filter((item): item is MatchedFoundItem => item !== null);
 
-            matchResults.push({ report, matches: matchedItems });
+            matchResults.push({ report, matches: matchedItems, studentId });
           }
 
           setMatchedItems(matchResults);
@@ -265,12 +276,11 @@ export function StudentHome({
             )}
           </Link>
 
-          <button className="relative p-2">
-            <Bell className="w-6 h-6 text-gray-700" />
-            {stats.pendingClaims > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-fetch-red rounded-full"></span>
-            )}
-          </button>
+          <NotificationDropdown
+            userId={studentId}
+            userType="student"
+            initialUnreadCount={unreadNotifications}
+          />
         </div>
 
         {/* Welcome Section */}

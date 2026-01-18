@@ -69,7 +69,7 @@ function MatchDetailCard({ match }: MatchDetailCardProps) {
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardContent className="p-0">
         <div className="flex gap-4 p-4">
-          {/* Image */}
+
           <div className="flex-shrink-0">
             {match.image_url ? (
               <div className="relative w-32 h-32 rounded-lg overflow-hidden bg-gray-100">

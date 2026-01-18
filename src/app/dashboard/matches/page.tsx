@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { getStudentMatches } from "@/lib/fetchers";
 import { MatchesClient } from "@/components/matches/matches-client";
 
-// Revalidate every 60 seconds
-export const revalidate = 60;
+// Disable caching for immediate updates
+export const revalidate = 0;
 
 export default async function MatchesPage() {
   // 1. Auth check
@@ -15,23 +15,32 @@ export default async function MatchesPage() {
   }
 
   // 2. Student-only access
-  if (profile.user_type !== "student" || !profile.studentId) {
+  if (profile.user_type !== "student") {
     redirect("/dashboard");
   }
+  
+  // 3. Extract studentId and validate
+  const studentId = profile.studentId;
+  
+  if (!studentId) {
+    redirect("/student-record-missing");
+  }
 
-  // 3. Get student's matches
-  const matchResults = await getStudentMatches(profile.studentId);
+  // 4. Get student's matches
+  const matchResults = await getStudentMatches(studentId);
 
-  // 4. Determine state
+  // 5. Determine state
   const hasNoReports = matchResults.length === 0;
   const hasNoMatches = !hasNoReports && matchResults.every((r) => r.matches.length === 0);
 
   return (
     <MatchesClient
-      studentId={profile.studentId}
+      studentId={studentId}
       matchResults={matchResults}
       hasNoReports={hasNoReports}
       hasNoMatches={hasNoMatches}
+      firstName={profile.first_name}
+      avatarUrl={profile.avatar_url}
     />
   );
 }

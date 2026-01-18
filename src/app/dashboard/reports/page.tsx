@@ -17,6 +17,12 @@ export default async function ReportsPage() {
   if (profile.user_type !== "student") {
     redirect("/dashboard");
   }
+  
+  if (!profile.studentId) {
+    redirect("/student-record-missing");
+  }
 
-  return <StudentReports studentId={profile.studentId || 0} />;
+  const studentId = profile.studentId;
+
+  return <StudentReports studentId={studentId} firstName={profile.first_name} avatarUrl={profile.avatar_url} />;
 }

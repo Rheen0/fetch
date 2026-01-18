@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { ReportFoundModal } from "@/components/modals/report-found-modal";
 import { SecurityLayout } from "@/components/layouts/security-layout";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatsSkeleton } from "@/components/skeletons/stats-skeleton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,7 @@ export function SecurityHome({
     itemReturned: 0,
   });
   const [recentItems, setRecentItems] = useState<RecentFoundItem[]>([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -61,6 +64,15 @@ export function SecurityHome({
     const supabase = createClient();
 
     try {
+      // Fetch unread notifications count
+      const { count: notifCount } = await supabase
+        .from("securitynotifications")
+        .select("notification_id", { count: "exact", head: true })
+        .eq("security_id", securityId)
+        .eq("is_read", false);
+
+      setUnreadNotifications(notifCount || 0);
+
       // Fetch stats
       const [foundItems, claimRequests, itemReturned] = await Promise.all([
         supabase
@@ -113,7 +125,6 @@ export function SecurityHome({
   return (
     <SecurityLayout
       securityId={securityId}
-      onReportClick={() => setIsModalOpen(true)}
       currentPath="dashboard"
     >
       {/* Main Content */}
@@ -137,12 +148,11 @@ export function SecurityHome({
             )}
           </Link>
 
-          <button className="relative p-2">
-            <Bell className="w-6 h-6 text-gray-700" />
-            {stats.claimRequests > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-fetch-red rounded-full"></span>
-            )}
-          </button>
+          <NotificationDropdown
+            userId={securityId}
+            userType="security"
+            initialUnreadCount={unreadNotifications}
+          />
         </div>
 
         {/* Welcome Section */}
@@ -156,31 +166,36 @@ export function SecurityHome({
         </div>
 
         {/* Stats Card */}
-        <Card className="bg-fetch-red text-white border-0 mb-6 overflow-hidden">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold mb-1">
-                  {stats.foundItems}
+        <div>
+          {loading ? (
+            <StatsSkeleton />
+          ) : (
+            <Card className="bg-fetch-red text-white border-0 mb-6 overflow-hidden">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold mb-1">
+                      {stats.foundItems}
+                    </div>
+                    <div className="text-xs opacity-90">Found Items</div>
+                  </div>
+                  <div className="text-center border-x border-white/20">
+                    <div className="text-3xl font-bold mb-1">
+                      {stats.claimRequests}
+                    </div>
+                    <div className="text-xs opacity-90">Claim Requests</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold mb-1">
+                      {stats.itemReturned}
+                    </div>
+                    <div className="text-xs opacity-90">Item Returned</div>
+                  </div>
                 </div>
-                <div className="text-xs opacity-90">Found Items</div>
-              </div>
-              <div className="text-center border-x border-white/20">
-                <div className="text-3xl font-bold mb-1">
-                  {stats.claimRequests}
-                </div>
-                <div className="text-xs opacity-90">Claim Requests</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold mb-1">
-                  {stats.itemReturned}
-                </div>
-                <div className="text-xs opacity-90">Item Returned</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+              </CardContent>
+            </Card>
+          )}
+        </div>
         {/* Browse Found Items Section */}
         <div>
           <div className="flex items-center justify-between mb-6">
@@ -262,8 +277,7 @@ export function SecurityHome({
       {/* Report Found Modal */}
       {isModalOpen && (
         <ReportFoundModal
-          securityId={securityId}
-          onSuccess={() => {
+          securityId={securityId}          onClose={() => setIsModalOpen(false)}          onSuccess={() => {
             setIsModalOpen(false);
             fetchDashboardData();
           }}
@@ -285,8 +299,14 @@ function FoundItemCard({ item }: FoundItemCardProps) {
   });
 
   const statusConfig = {
-    pending: { label: "Pending", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-    returned: { label: "Returned", color: "bg-green-50 text-green-700 border-green-200" },
+    pending: {
+      label: "Pending",
+      color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    },
+    returned: {
+      label: "Returned",
+      color: "bg-green-50 text-green-700 border-green-200",
+    },
   };
 
   const status =

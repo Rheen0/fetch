@@ -26,7 +26,7 @@ import { Loader2, CheckCircle, X } from "lucide-react";
 
 interface ReportFoundModalProps {
   securityId: number;
-  onClose: () => void;
+  onClose?: () => void;
   onSuccess: () => void;
 }
 
@@ -101,7 +101,7 @@ export function ReportFoundModal({
       // Wait 2 seconds then close and trigger refresh
       setTimeout(() => {
         onSuccess();
-        onClose();
+        onClose?.();
       }, 2000);
     } catch (error: any) {
       console.error("Error reporting found item:", error);
@@ -151,10 +151,21 @@ export function ReportFoundModal({
           {/* Image Upload */}
           <div>
             <Label>Add Photo</Label>
-            <ImageUpload
-              onImageSelect={setImageFile}
-              currentImage={imageFile ? URL.createObjectURL(imageFile) : null}
-            />
+            <div className="mt-2">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setImageFile(file);
+                }}
+              />
+              {imageFile && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Selected: {imageFile.name}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Item Name */}

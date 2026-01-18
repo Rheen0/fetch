@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { updateClaimStatus } from "@/app/dashboard/claims/actions";
 import { SecurityLayout } from "@/components/layouts/security-layout";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import {
   ArrowLeft,
   CheckCircle,
   XCircle,
+  ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,17 +43,19 @@ interface Claim {
   found_id: number;
   student_id: number;
   status: string;
-  claim_at: string;
+  claimed_at: string;
   founditem: {
     item_name: string;
     category: string;
     image_url: string | null;
     found_location: string | null;
+    security_id: number;
   };
   student: {
     first_name: string;
     last_name: string;
     email: string;
+    phone?: string | null;
   };
 }
 
@@ -79,6 +83,23 @@ export function SecurityClaims({
     const supabase = createClient();
 
     try {
+      // First, get all found items by this security personnel
+      const { data: foundItems, error: foundError } = await supabase
+        .from("founditem")
+        .select("found_id")
+        .eq("security_id", securityId);
+
+      if (foundError) throw foundError;
+
+      const foundIds = (foundItems || []).map((item) => item.found_id);
+
+      if (foundIds.length === 0) {
+        setClaims([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get all claims for those found items
       const { data, error } = await supabase
         .from("claim")
         .select(
@@ -88,19 +109,32 @@ export function SecurityClaims({
             item_name,
             category,
             image_url,
-            found_location
+            found_location,
+            security_id
           ),
           student:student_id (
             first_name,
             last_name,
-            email
+            email,
+            phone
           )
         `
         )
-        .order("claim_at", { ascending: false });
+        .in("found_id", foundIds)
+        .order("claimed_at", { ascending: false });
 
       if (error) throw error;
-      setClaims(data || []);
+
+      // Handle both array and object responses from Supabase
+      const formattedClaims = (data || []).map((claim: any) => ({
+        ...claim,
+        founditem: Array.isArray(claim.founditem)
+          ? claim.founditem[0]
+          : claim.founditem,
+        student: Array.isArray(claim.student) ? claim.student[0] : claim.student,
+      }));
+
+      setClaims(formattedClaims);
     } catch (error) {
       console.error("Error fetching claims:", error);
       toast.error("Failed to load claims");
@@ -167,42 +201,41 @@ export function SecurityClaims({
 
   return (
     <SecurityLayout currentPath="claims">
-      <div className="p-4 pb-24">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="p-2">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <h1 className="text-xl font-bold text-gray-900">Claims</h1>
+      {/* Header */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="p-2">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <ClipboardCheck className="w-5 h-5 text-fetch-red" />
+                  Claims Management
+                </h1>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {stats.all} total claims
+                </p>
+              </div>
+            </div>
+            <NotificationDropdown
+              userId={securityId}
+              userType="security"
+            />
           </div>
-
-          <Link href="/profile" className="flex items-center gap-2">
-            {avatarUrl ? (
-              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-                <Image
-                  src={avatarUrl}
-                  alt={firstName}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                <User className="w-5 h-5 text-gray-600" />
-              </div>
-            )}
-          </Link>
         </div>
+      </div>
 
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-24">
         {/* Search Bar */}
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search"
+            placeholder="Search by item name or student name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-11 rounded-lg border-gray-300 bg-white"

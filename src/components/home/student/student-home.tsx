@@ -5,9 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { ReportLostModal } from "@/components/modals/report-lost-modal";
 import { AllMatchesModal } from "@/components/modals/all-matches-modal";
 import { StudentLayout } from "@/components/layouts/student-layout";
-import { PageHeader } from "@/components/layouts/page-header";
 import Link from "next/link";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, User, Bell } from "lucide-react";
 import { Marquee } from "@/components/ui/marquee";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,9 +25,15 @@ interface HomeProps {
   studentId: number;
   firstName?: string;
   email: string;
+  avatarUrl?: string | null;
 }
 
-export function StudentHome({ studentId, firstName, email }: HomeProps) {
+export function StudentHome({
+  studentId,
+  firstName,
+  email,
+  avatarUrl,
+}: HomeProps) {
   const [matchedItems, setMatchedItems] = useState<LostItemWithMatches[]>([]);
   const [stats, setStats] = useState<StudentStats>({
     activeReports: 0,
@@ -235,90 +240,146 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
     : bestMatches;
 
   return (
-    <StudentLayout 
+    <StudentLayout
       onReportClick={() => setIsModalOpen(true)}
       currentPath="dashboard"
     >
-      {/* Header */}
-      <PageHeader
-        icon={
-          <svg
-            viewBox="0 0 24 24"
-            className="w-7 h-7 text-white"
-            fill="currentColor"
-          >
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-          </svg>
-        }
-        title={`Welcome back, ${firstName}!`}
-        subtitle="Track your lost items"
-      />
-
-      {/* Stats Card */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {loading ? (
-          <StatsSkeleton />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatsCard
-              value={stats.activeReports}
-              label="Active Reports"
-              variant="primary"
-            />
-            <StatsCard
-              value={stats.pendingClaims}
-              label="Pending Claims"
-              variant="default"
-            />
-            <StatsCard
-              value={stats.itemsClaimed}
-              label="Items Claimed"
-              variant="success"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Browse Section */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Main Content */}
+      <div className="p-4 pb-24">
+        {/* Header with Avatar and Notification */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Best Matches</h2>
-            <p className="text-sm text-gray-500 mt-1">Highest confidence results</p>
-          </div>
-          <Link href="/dashboard/matches">
-            <Button variant="ghost" size="sm" className="text-fetch-red hover:text-fetch-red hover:bg-fetch-red/10">
-              View All
-            </Button>
+          <Link href="/profile" className="flex items-center gap-2">
+            {avatarUrl ? (
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                <Image
+                  src={avatarUrl}
+                  alt={firstName || "User"}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                <User className="w-5 h-5 text-gray-600" />
+              </div>
+            )}
           </Link>
+
+          <button className="relative p-2">
+            <Bell className="w-6 h-6 text-gray-700" />
+            {stats.pendingClaims > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-fetch-red rounded-full"></span>
+            )}
+          </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search your matches..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-11 rounded-xl border-gray-200 focus:border-fetch-red focus:ring-fetch-red"
-          />
+        {/* Welcome Section */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Welcome back, {firstName}!
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Let's help you fetch your lost item.
+          </p>
         </div>
 
-        {/* Matched Items Display - Grid or Marquee */}
-        {loading ? (
-          <MatchCardListSkeleton />
-        ) : filteredMatches.length > 0 ? (
-          <div className="relative">
-            {filteredMatches.length < 4 ? (
-              // Static grid for 1-3 items
-              <div className="flex flex-wrap gap-4 justify-center">
-                {filteredMatches.map((match) => (
-                  <div
-                    key={`${match.reportId}-${match.found_id}`}
-                    className="flex justify-center w-full sm:w-auto"
-                  >
+        {/* Stats Card */}
+        <div>
+          {loading ? (
+            <StatsSkeleton />
+          ) : (
+            <Card className="bg-fetch-red text-white border-0 mb-6 overflow-hidden">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold mb-1">
+                      {stats.activeReports}
+                    </div>
+                    <div className="text-xs opacity-90">Active Reports</div>
+                  </div>
+                  <div className="text-center border-x border-white/20">
+                    <div className="text-3xl font-bold mb-1">
+                      {stats.pendingClaims}
+                    </div>
+                    <div className="text-xs opacity-90">Pending Claims</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold mb-1">
+                      {stats.itemsClaimed}
+                    </div>
+                    <div className="text-xs opacity-90">Item Claimed</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Browse Section */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Best Matches
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Highest confidence results
+              </p>
+            </div>
+            <Link href="/dashboard/matches">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-fetch-red hover:text-fetch-red hover:bg-fetch-red/10"
+              >
+                View All
+              </Button>
+            </Link>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search your matches..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-11 rounded-xl border-gray-200 focus:border-fetch-red focus:ring-fetch-red"
+            />
+          </div>
+
+          {/* Matched Items Display - Grid or Marquee */}
+          {loading ? (
+            <MatchCardListSkeleton />
+          ) : filteredMatches.length > 0 ? (
+            <div className="relative">
+              {filteredMatches.length < 4 ? (
+                // Static grid for 1-3 items
+                <div className="flex flex-wrap gap-4 justify-center">
+                  {filteredMatches.map((match) => (
+                    <div
+                      key={`${match.reportId}-${match.found_id}`}
+                      className="flex justify-center w-full sm:w-auto"
+                    >
+                      <BestMatchCard
+                        match={match}
+                        onViewAll={() =>
+                          setSelectedItem({
+                            lostItemName: match.lostItemName,
+                            matches: match.allMatches,
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Marquee for 4+ items
+                <Marquee pauseOnHover className="[--duration:60s]">
+                  {filteredMatches.map((match) => (
                     <BestMatchCard
+                      key={`${match.reportId}-${match.found_id}`}
                       match={match}
                       onViewAll={() =>
                         setSelectedItem({
@@ -327,36 +388,20 @@ export function StudentHome({ studentId, firstName, email }: HomeProps) {
                         })
                       }
                     />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              // Marquee for 4+ items
-              <Marquee pauseOnHover className="[--duration:60s]">
-                {filteredMatches.map((match) => (
-                  <BestMatchCard
-                    key={`${match.reportId}-${match.found_id}`}
-                    match={match}
-                    onViewAll={() =>
-                      setSelectedItem({
-                        lostItemName: match.lostItemName,
-                        matches: match.allMatches,
-                      })
-                    }
-                  />
-                ))}
-              </Marquee>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-12 text-gray-500">
-            {searchQuery
-              ? "No matches found for your search"
-              : stats.activeReports > 0
-              ? "No matches yet. We'll notify you when we find similar items!"
-              : "Report a lost item to start finding matches"}
-          </div>
-        )}
+                  ))}
+                </Marquee>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              {searchQuery
+                ? "No matches found for your search"
+                : stats.activeReports > 0
+                  ? "No matches yet. We'll notify you when we find similar items!"
+                  : "Report a lost item to start finding matches"}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Report Lost Modal */}
@@ -407,8 +452,8 @@ function BestMatchCard({ match, onViewAll }: BestMatchCardProps) {
     match.match_score >= 70
       ? "bg-green-50 text-green-700 border-green-200"
       : match.match_score >= 50
-      ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-      : "bg-orange-50 text-orange-700 border-orange-200";
+        ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+        : "bg-orange-50 text-orange-700 border-orange-200";
 
   return (
     <Card className="w-[280px] shrink-0 overflow-hidden border-gray-200 hover:border-fetch-red transition-all hover:shadow-md">
@@ -426,7 +471,9 @@ function BestMatchCard({ match, onViewAll }: BestMatchCardProps) {
               <span className="bg-white/95 text-gray-900 text-xs font-medium px-3 py-1 rounded-full">
                 Best Match
               </span>
-              <span className={`${scoreColor} text-xs font-bold px-3 py-1 rounded-full border backdrop-blur-sm`}>
+              <span
+                className={`${scoreColor} text-xs font-bold px-3 py-1 rounded-full border backdrop-blur-sm`}
+              >
                 {match.match_score}%
               </span>
             </div>
@@ -435,8 +482,18 @@ function BestMatchCard({ match, onViewAll }: BestMatchCardProps) {
           <div className="w-full h-[200px] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative">
             <div className="text-center">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-2">
-                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
               <span className="text-gray-500 text-xs">No Image</span>
@@ -445,7 +502,9 @@ function BestMatchCard({ match, onViewAll }: BestMatchCardProps) {
               <span className="bg-white text-gray-900 text-xs font-medium px-3 py-1 rounded-full">
                 Best Match
               </span>
-              <span className={`${scoreColor} text-xs font-bold px-3 py-1 rounded-full border`}>
+              <span
+                className={`${scoreColor} text-xs font-bold px-3 py-1 rounded-full border`}
+              >
                 {match.match_score}%
               </span>
             </div>
@@ -469,20 +528,48 @@ function BestMatchCard({ match, onViewAll }: BestMatchCardProps) {
 
           <div className="space-y-1.5 text-sm text-gray-600">
             <div className="flex items-start gap-2">
-              <svg className="w-4 h-4 text-fetch-red mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+              <svg
+                className="w-4 h-4 text-fetch-red mt-0.5 shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                  clipRule="evenodd"
+                />
               </svg>
               <span className="line-clamp-1">{match.found_location}</span>
             </div>
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg
+                className="w-4 h-4 text-gray-400 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
               <span>{foundDate}</span>
             </div>
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              <svg
+                className="w-4 h-4 text-gray-400 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
               </svg>
               <span>{match.security_name}</span>
             </div>

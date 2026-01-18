@@ -57,21 +57,17 @@ export function SettingsContent({ profile }: SettingsContentProps) {
         </Alert>
 
         {/* Notifications */}
-        <div className="space-y-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600">
+        {/* <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-gray-700 px-1">
             Notifications
-          </h2>
+          </h3>
 
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-lg shadow-sm divide-y divide-gray-100">
+            <div className="flex items-center justify-between px-4 py-3.5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
-                  <Bell className="h-5 w-5 text-blue-600" />
-                </div>
+                <Bell className="h-5 w-5 text-gray-600" />
                 <div>
-                  <p className="font-medium text-gray-900">
-                    Push Notifications
-                  </p>
+                  <p className="text-gray-900">Push Notifications</p>
                   <p className="text-xs text-gray-500">Receive match alerts</p>
                 </div>
               </div>
@@ -88,16 +84,12 @@ export function SettingsContent({ profile }: SettingsContentProps) {
                 <div className="peer h-6 w-11 rounded-full bg-gray-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-red-600 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
               </label>
             </div>
-          </div>
 
-          <div className="rounded-lg bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between px-4 py-3.5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50">
-                  <Bell className="h-5 w-5 text-green-600" />
-                </div>
+                <Bell className="h-5 w-5 text-gray-600" />
                 <div>
-                  <p className="font-medium text-gray-900">Email Alerts</p>
+                  <p className="text-gray-900">Email Alerts</p>
                   <p className="text-xs text-gray-500">Get updates via email</p>
                 </div>
               </div>
@@ -115,56 +107,49 @@ export function SettingsContent({ profile }: SettingsContentProps) {
               </label>
             </div>
           </div>
-        </div>
-
+        </div> */}
 
         {/* Other */}
         <div className="space-y-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-600">
-            Other
-          </h2>
+          <h3 className="text-sm font-semibold text-gray-700 px-1">Other</h3>
 
-          <Link
-            href="/settings/language"
-            className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-50">
-                <Globe className="h-5 w-5 text-purple-600" />
+          <div className="bg-white rounded-lg shadow-sm divide-y divide-gray-100">
+            <Link
+              href="#"
+              className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50 first:rounded-t-lg"
+            >
+              <div className="flex items-center gap-3">
+                <Globe className="h-5 w-5 text-gray-600" />
+                <div>
+                  <p className="text-gray-900">Language</p>
+                  <p className="text-xs text-gray-500">English (US)</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-gray-900">Language</p>
-                <p className="text-xs text-gray-500">English (US)</p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
-          </Link>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </Link>
 
-          <Link
-            href="/settings/privacy"
-            className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50">
-                <Shield className="h-5 w-5 text-red-600" />
+            <Link
+              href="#"
+              className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50"
+            >
+              <div className="flex items-center gap-3">
+                <Shield className="h-5 w-5 text-gray-600" />
+                <p className="text-gray-900">Privacy & Security</p>
               </div>
-              <p className="font-medium text-gray-900">Privacy & Security</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
-          </Link>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </Link>
 
-          <Link
-            href="/support"
-            className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50">
-                <HelpCircle className="h-5 w-5 text-orange-600" />
+            <Link
+              href="/profile/support"
+              className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50 last:rounded-b-lg"
+            >
+              <div className="flex items-center gap-3">
+                <HelpCircle className="h-5 w-5 text-gray-600" />
+                <p className="text-gray-900">Help & Support</p>
               </div>
-              <p className="font-medium text-gray-900">Help & Support</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
-          </Link>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </Link>
+          </div>
         </div>
 
         {/* App Version */}

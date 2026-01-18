@@ -1,4 +1,3 @@
-// filepath: src/app/profile/page.tsx
 import { getCachedUserData } from "@/utils/supabase/cached-queries";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -76,78 +75,70 @@ export default async function ProfilePage() {
       </div>
 
       {/* Menu Items */}
-      <div className="mx-auto mt-10 max-w-md px-4 pb-8 space-y-4">
-        {/* Edit Profile */}
-        <Link
-          href="/profile/edit"
-          className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
-              <User className="h-5 w-5 text-blue-600" />
-            </div>
-            <span className="font-medium text-gray-900">Edit Profile</span>
-          </div>
-          <ChevronRight className="h-5 w-5 text-gray-400" />
-        </Link>
-
-        {/* Customer Support */}
-        <Link
-          href="/profile/support"
-          className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50">
-              <MessageCircle className="h-5 w-5 text-green-600" />
-            </div>
-            <span className="font-medium text-gray-900">Customer Support</span>
-          </div>
-          <ChevronRight className="h-5 w-5 text-gray-400" />
-        </Link>
-
-        {/* Rate Us */}
-        <Link
-          href="/profile/rate"
-          className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-50">
-              <Star className="h-5 w-5 text-yellow-600" />
-            </div>
-            <span className="font-medium text-gray-900">Rate Us</span>
-          </div>
-          <ChevronRight className="h-5 w-5 text-gray-400" />
-        </Link>
-
-        {/* Settings */}
-        <Link
-          href="/profile/settings"
-          className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50">
-              <Settings className="h-5 w-5 text-gray-600" />
-            </div>
-            <span className="font-medium text-gray-900">Settings</span>
-          </div>
-          <ChevronRight className="h-5 w-5 text-gray-400" />
-        </Link>
-
-        {/* Log Out */}
-        <form action={logout}>
-          <button
-            type="submit"
-            className="flex w-full items-center justify-between rounded-lg bg-white p-4 shadow-sm text-left transition-colors hover:bg-gray-50"
+      <div className="mx-auto mt-6 max-w-md px-4 pb-8">
+        <div className="bg-white rounded-lg shadow-sm divide-y divide-gray-100">
+          {/* Edit Profile */}
+          <Link
+            href="/profile/edit"
+            className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50 first:rounded-t-lg"
           >
-            <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50">
-                <LogOut className="h-5 w-5 text-fetch-red" />
-              </div>
-              <span className="font-medium text-fetch-red">Log out</span>
+            <div className="flex items-center gap-3">
+              <User className="h-5 w-5 text-gray-600" />
+              <span className="text-gray-900">Edit Profile</span>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
-          </button>
-        </form>
+          </Link>
+
+          {/* Customer Support */}
+          <Link
+            href="/profile/support"
+            className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
+              <MessageCircle className="h-5 w-5 text-gray-600" />
+              <span className="text-gray-900">Customer Support</span>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          {/* Rate Us */}
+          <Link
+            href="/profile/rate"
+            className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
+              <Star className="h-5 w-5 text-gray-600" />
+              <span className="text-gray-900">Rate Us</span>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          {/* Settings */}
+          <Link
+            href="/profile/settings"
+            className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
+              <Settings className="h-5 w-5 text-gray-600" />
+              <span className="text-gray-900">Settings</span>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          {/* Log Out */}
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-gray-50 last:rounded-b-lg"
+            >
+              <div className="flex items-center gap-3">
+                <LogOut className="h-5 w-5 text-fetch-red" />
+                <span className="text-fetch-red">Log out</span>
+              </div>
+              <ChevronRight className="h-5 w-5 text-gray-400" />
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

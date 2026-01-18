@@ -92,9 +92,9 @@ export function RateUsContent({ profile, email }: RateUsContentProps) {
       </div>
 
       <div className="mx-auto max-w-md px-4 py-6">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="rounded-lg bg-white p-6 shadow-sm">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900">
               How was your experience?
             </h2>
             <p className="mt-2 text-sm text-gray-600">
@@ -151,7 +151,7 @@ export function RateUsContent({ profile, email }: RateUsContentProps) {
             </div>
 
             {/* Display on Landing Page */}
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+            <div className="rounded-lg border border-gray-200 p-4 space-y-3">
               <div className="flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -199,7 +199,7 @@ export function RateUsContent({ profile, email }: RateUsContentProps) {
             </div>
 
             {/* User Info */}
-            <div className="rounded-lg bg-gray-50 p-4">
+            <div className="rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-600">Submitting as:</p>
               <p className="font-medium text-gray-900">
                 {profile.first_name} {profile.last_name}

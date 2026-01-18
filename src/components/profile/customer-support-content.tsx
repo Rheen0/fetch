@@ -86,8 +86,8 @@ export function CustomerSupportContent({
 
       <div className="mx-auto max-w-md px-4 py-6 space-y-6">
         {/* Help Section */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="text-center text-xl font-bold text-gray-900">
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="text-center text-xl font-semibold text-gray-900">
             How can we help you?
           </h2>
 
@@ -95,7 +95,7 @@ export function CustomerSupportContent({
           <div className="relative mt-4">
             <Input
               type="text"
-              placeholder="Search something"
+              placeholder="Search FAQs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10"
@@ -105,59 +105,51 @@ export function CustomerSupportContent({
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <Link
             href="#"
-            className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 shadow-sm transition-colors hover:bg-gray-50"
+            className="flex flex-col items-center gap-2 rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 border border-gray-100"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50">
-              <FileText className="h-8 w-8 text-blue-600" />
-            </div>
-            <span className="text-sm font-medium text-gray-900">
+            <FileText className="h-7 w-7 text-gray-600" />
+            <span className="text-sm text-gray-900">
               Get Started
             </span>
           </Link>
 
           <Link
             href="/profile/edit"
-            className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 shadow-sm transition-colors hover:bg-gray-50"
+            className="flex flex-col items-center gap-2 rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 border border-gray-100"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-50">
-              <User className="h-8 w-8 text-purple-600" />
-            </div>
-            <span className="text-sm font-medium text-gray-900">
+            <User className="h-7 w-7 text-gray-600" />
+            <span className="text-sm text-gray-900">
               Account & Profile
             </span>
           </Link>
 
           <Link
             href="/dashboard"
-            className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 shadow-sm transition-colors hover:bg-gray-50"
+            className="flex flex-col items-center gap-2 rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 border border-gray-100"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50">
-              <Package className="h-8 w-8 text-orange-600" />
-            </div>
-            <span className="text-sm font-medium text-gray-900">
+            <Package className="h-7 w-7 text-gray-600" />
+            <span className="text-sm text-gray-900">
               Item Status
             </span>
           </Link>
 
           <Link
             href="#"
-            className="flex flex-col items-center gap-3 rounded-2xl bg-white p-6 shadow-sm transition-colors hover:bg-gray-50"
+            className="flex flex-col items-center gap-2 rounded-lg bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 border border-gray-100"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50">
-              <Headphones className="h-8 w-8 text-green-600" />
-            </div>
-            <span className="text-sm font-medium text-gray-900">
+            <Headphones className="h-7 w-7 text-gray-600" />
+            <span className="text-sm text-gray-900">
               Contact Us
             </span>
           </Link>
         </div>
 
         {/* FAQ Section */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-600">
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-semibold text-gray-700">
             Frequently Asked Questions
           </h3>
 

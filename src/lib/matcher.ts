@@ -9,20 +9,42 @@ export function calculateMatchScore(
   foundItem: FoundItem
 ): number {
   let score = 0;
+  const details: string[] = [];
 
-  // 1. Category Match (50 points) - Increased weight since no found item description
+  // 1. Category Match (40 points) - Must match category
   if (lostItem.category === foundItem.category) {
-    score += 50;
+    score += 40;
+    details.push(`Category match: +40`);
+  } else {
+    details.push(`Category mismatch: 0`);
+    // Different categories = no match
+    return 0;
   }
 
-  // 2. Item Name Similarity (40 points) - Increased weight
+  // 2. Item Name Similarity (35 points)
   const nameSimilarity = getStringSimilarity(
     lostItem.item_name,
     foundItem.item_name
   );
-  score += nameSimilarity * 40;
+  const namePoints = nameSimilarity * 35;
+  score += namePoints;
+  details.push(`Name similarity: ${(nameSimilarity * 100).toFixed(0)}% = +${namePoints.toFixed(1)}`);
 
-  // 3. Time Proximity (10 points)
+  // 3. Description Similarity (15 points)
+  if (lostItem.description && foundItem.description) {
+    const descSimilarity = getStringSimilarity(
+      lostItem.description,
+      foundItem.description
+    );
+    const descPoints = descSimilarity * 15;
+    score += descPoints;
+    details.push(`Description similarity: ${(descSimilarity * 100).toFixed(0)}% = +${descPoints.toFixed(1)}`);
+  } else if (lostItem.description || foundItem.description) {
+    // One has description, other doesn't - small penalty
+    details.push(`Missing description: 0`);
+  }
+
+  // 4. Time Proximity (10 points)
   const timeDiff = Math.abs(
     new Date(foundItem.found_at).getTime() -
       new Date(lostItem.reported_at).getTime()
@@ -30,10 +52,16 @@ export function calculateMatchScore(
   const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
 
   if (daysDiff <= 7) {
-    score += ((7 - daysDiff) / 7) * 10;
+    const timePoints = ((7 - daysDiff) / 7) * 10;
+    score += timePoints;
+    details.push(`Time proximity (${daysDiff.toFixed(1)} days): +${timePoints.toFixed(1)}`);
+  } else {
+    details.push(`Time difference too large (${daysDiff.toFixed(1)} days): 0`);
   }
 
-  return Math.round(Math.min(score, 100));
+  const finalScore = Math.round(Math.min(score, 100));
+
+  return finalScore;
 }
 
 /**
@@ -91,7 +119,7 @@ export function findTopMatches(
   lostItem: LostItemReport,
   foundItems: FoundItem[],
   topN: number = 10,
-  minScore: number = 30
+  minScore: number = 40
 ): Array<{ foundItem: FoundItem; score: number }> {
   const matches = foundItems
     .map((foundItem) => ({
@@ -102,6 +130,7 @@ export function findTopMatches(
     .sort((a, b) => b.score - a.score)
     .slice(0, topN);
 
+  return matches;
   return matches;
 }
 
@@ -114,18 +143,29 @@ export async function processNewLostItemMatches(
   lostItem: LostItemReport
 ): Promise<void> {
   // Dynamic import to avoid bundling server code in client
-  const { getPendingFoundItems, upsertMatch } = await import("./fetchers");
+  const { getPendingFoundItems, upsertMatch, createMatchNotification } = await import("./fetchers");
 
   // Get all pending found items
   const foundItems = await getPendingFoundItems();
 
-  if (foundItems.length === 0) return;
+  if (foundItems.length === 0) {
+    return;
+  }
 
   // Find matches
-  const matches = findTopMatches(lostItem, foundItems, 10, 30);
+  const matches = findTopMatches(lostItem, foundItems, 10, 40);
 
-  // Save matches to database
+  // Save matches to database and create notifications for good matches
   for (const { foundItem, score } of matches) {
-    await upsertMatch(reportId, foundItem.found_id, score);
+    const matchId = await upsertMatch(reportId, foundItem.found_id, score);
+    
+    // Create notification for matches with score >= 50
+    if (matchId && score >= 50) {
+      await createMatchNotification(
+        lostItem.student_id,
+        matchId,
+        `We found a ${score}% match for your ${lostItem.item_name}!`
+      );
+    }
   }
 }

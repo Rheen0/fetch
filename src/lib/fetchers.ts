@@ -186,12 +186,18 @@ export async function getStudentMatches(
     }
 
     if (!matches || matches.length === 0) {
-      results.push({ report, matches: [] });
+      results.push({ report, matches: [], studentId });
       continue;
     }
 
+    // Filter out returned and claimed items
+    const availableMatches = matches.filter((m) => {
+      const founditem = Array.isArray(m.founditem) ? m.founditem[0] : m.founditem;
+      return founditem && founditem.status !== "returned" && founditem.status !== "claimed";
+    });
+
     // Get security names
-    const securityIds = matches
+    const securityIds = availableMatches
       .map((m) => {
         const founditem = m.founditem;
         if (!founditem) return undefined;
@@ -204,7 +210,7 @@ export async function getStudentMatches(
     const securityNames = await getSecurityNames(securityIds);
 
     // Map to MatchedFoundItem
-    const matchedItems: MatchedFoundItem[] = matches
+    const matchedItems: MatchedFoundItem[] = availableMatches
       .filter((m) => m.founditem)
       .map((m) => {
         // Handle both array and object responses from Supabase
@@ -232,7 +238,11 @@ export async function getStudentMatches(
       })
       .filter((item): item is MatchedFoundItem => item !== null);
 
-    results.push({ report, matches: matchedItems });
+    results.push({ 
+      report, 
+      matches: matchedItems,
+      studentId // Include studentId in the result
+    });
   }
 
   return results;
@@ -292,4 +302,95 @@ export async function getStudentStats(
     itemsClaimed: approvedClaimsResult.count || 0,
     totalMatches: matchesResult.count || 0,
   };
+}
+
+/**
+ * Create a notification for a student
+ */
+export async function createMatchNotification(
+  studentId: number,
+  matchId: number,
+  message: string
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("notification").insert({
+    student_id: studentId,
+    match_id: matchId,
+    message,
+    is_read: false,
+  });
+
+  if (error) {
+    console.error("Error creating notification:", error);
+  }
+}
+
+/**
+ * Get unread notification count for a student
+ */
+export async function getUnreadNotificationCount(
+  studentId: number
+): Promise<number> {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from("notification")
+    .select("notification_id", { count: "exact", head: true })
+    .eq("student_id", studentId)
+    .eq("is_read", false);
+
+  if (error) {
+    console.error("Error fetching notification count:", error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
+/**
+ * Create a notification for security personnel
+ */
+export async function createSecurityNotification(
+  securityId: number,
+  message: string,
+  claimId?: number,
+  foundId?: number
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("securitynotifications").insert({
+    security_id: securityId,
+    claim_id: claimId || null,
+    found_id: foundId || null,
+    message,
+    is_read: false,
+    created_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error("Error creating security notification:", error);
+  }
+}
+
+/**
+ * Get unread notification count for security personnel
+ */
+export async function getSecurityUnreadNotificationCount(
+  securityId: number
+): Promise<number> {
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from("securitynotifications")
+    .select("notification_id", { count: "exact", head: true })
+    .eq("security_id", securityId)
+    .eq("is_read", false);
+
+  if (error) {
+    console.error("Error fetching security notification count:", error);
+    return 0;
+  }
+
+  return count || 0;
 }

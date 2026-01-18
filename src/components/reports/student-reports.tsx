@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { StudentLayout } from "@/components/layouts/student-layout";
 import { ReportLostModal } from "@/components/modals/report-lost-modal";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,20 +39,32 @@ import {
 import { StatsSkeleton } from "@/components/skeletons/stats-skeleton";
 import { ReportListSkeleton } from "@/components/skeletons/report-card-skeleton";
 import type { LostItemReport } from "@/lib/types";
+import { SearchFilters, type SearchFilters as SearchFiltersType } from "@/components/search/search-filters";
+import { filterLostItems, sortByRelevance } from "@/lib/search-utils";
 
 interface StudentReportsProps {
   studentId: number;
+  firstName: string;
+  avatarUrl?: string | null;
 }
 
 interface ReportWithMatches extends LostItemReport {
   matchCount: number;
 }
 
-export function StudentReports({ studentId }: StudentReportsProps) {
+export function StudentReports({ studentId, firstName, avatarUrl }: StudentReportsProps) {
   const [activeReports, setActiveReports] = useState<ReportWithMatches[]>([]);
   const [closedReports, setClosedReports] = useState<ReportWithMatches[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
+    searchQuery: "",
+    category: "",
+    location: "",
+    dateFrom: "",
+    dateTo: "",
+    status: "",
+  });
   const [cancelDialog, setCancelDialog] = useState<{
     open: boolean;
     reportId: number | null;
@@ -60,6 +73,23 @@ export function StudentReports({ studentId }: StudentReportsProps) {
     open: boolean;
     reportId: number | null;
   }>({ open: false, reportId: null });
+
+  // Filter and sort reports based on search criteria
+  const filteredActiveReports = useMemo(() => {
+    let filtered = filterLostItems(activeReports, searchFilters) as ReportWithMatches[];
+    if (searchFilters.searchQuery) {
+      filtered = sortByRelevance(filtered, searchFilters.searchQuery) as ReportWithMatches[];
+    }
+    return filtered;
+  }, [activeReports, searchFilters]);
+
+  const filteredClosedReports = useMemo(() => {
+    let filtered = filterLostItems(closedReports, searchFilters) as ReportWithMatches[];
+    if (searchFilters.searchQuery) {
+      filtered = sortByRelevance(filtered, searchFilters.searchQuery) as ReportWithMatches[];
+    }
+    return filtered;
+  }, [closedReports, searchFilters]);
 
   useEffect(() => {
     fetchReports();
@@ -187,21 +217,26 @@ export function StudentReports({ studentId }: StudentReportsProps) {
       currentPath="reports"
     >
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-4 mb-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-fetch-red">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">My Reports</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Track and manage your lost item reports
-            </p>
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="p-2">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">My Reports</h1>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Track and manage your lost item reports
+                </p>
+              </div>
+            </div>
+            <NotificationDropdown
+              userId={studentId}
+              userType="student"
+            />
           </div>
         </div>
       </div>
@@ -231,6 +266,13 @@ export function StudentReports({ studentId }: StudentReportsProps) {
           </div>
         </div>
 
+        {/* Search Filters */}
+        <SearchFilters
+          onFilterChange={setSearchFilters}
+          showStatus={true}
+          userType="student"
+        />
+
         {/* Tabs */}
         <Tabs defaultValue="active" className="w-full">
           <TabsList className="w-full grid grid-cols-2 bg-gray-100 rounded-lg p-1">
@@ -238,29 +280,33 @@ export function StudentReports({ studentId }: StudentReportsProps) {
               value="active"
               className="rounded-md data-[state=active]:bg-white data-[state=active]:text-fetch-red data-[state=active]:shadow-sm"
             >
-              Active ({activeReports.length})
+              Active ({filteredActiveReports.length})
             </TabsTrigger>
             <TabsTrigger 
               value="closed"
               className="rounded-md data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
             >
-              Closed ({closedReports.length})
+              Closed ({filteredClosedReports.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="space-y-4 mt-6">
-            {activeReports.length === 0 ? (
+            {filteredActiveReports.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <AlertCircle className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No active reports</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {activeReports.length === 0 ? "No active reports" : "No matching results"}
+                </h3>
                 <p className="text-sm text-gray-500">
-                  Report a lost item to start finding matches!
+                  {activeReports.length === 0 
+                    ? "Report a lost item to start finding matches!" 
+                    : "Try adjusting your search filters"}
                 </p>
               </div>
             ) : (
-              activeReports.map((report) => (
+              filteredActiveReports.map((report) => (
                 <ReportCard
                   key={report.report_id}
                   report={report}
@@ -276,18 +322,22 @@ export function StudentReports({ studentId }: StudentReportsProps) {
           </TabsContent>
 
           <TabsContent value="closed" className="space-y-4 mt-6">
-            {closedReports.length === 0 ? (
+            {filteredClosedReports.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No closed reports</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {closedReports.length === 0 ? "No closed reports" : "No matching results"}
+                </h3>
                 <p className="text-sm text-gray-500">
-                  Closed reports will appear here
+                  {closedReports.length === 0
+                    ? "Closed reports will appear here"
+                    : "Try adjusting your search filters"}
                 </p>
               </div>
             ) : (
-              closedReports.map((report) => (
+              filteredClosedReports.map((report) => (
                 <ReportCard
                   key={report.report_id}
                   report={report}

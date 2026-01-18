@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { MatchedFoundItem } from "@/lib/types";
-import { MapPin, User, Calendar, Loader2 } from "lucide-react";
+import { MapPin, User, Calendar, Loader2, Package } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { createClaim } from "@/app/dashboard/claims/actions";
 import { toast } from "sonner";
 
@@ -16,23 +18,19 @@ interface MatchCardProps {
 export function MatchCard({ match, reportId, studentId }: MatchCardProps) {
   const [claiming, setClaiming] = useState(false);
 
-  const scoreColor =
-    match.match_score >= 70
-      ? "text-green-600"
-      : match.match_score >= 50
-      ? "text-yellow-600"
-      : "text-orange-600";
-
   const handleClaim = async () => {
     setClaiming(true);
 
     try {
-      const result = await createClaim(match.item_id, studentId);
+      const result = await createClaim(match.found_id, studentId);
 
       if (result.error) {
         toast.error(result.error);
       } else {
         toast.success("Claim submitted! Security will verify your request.");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       }
     } catch (error) {
       toast.error("Failed to submit claim. Please try again.");
@@ -42,76 +40,79 @@ export function MatchCard({ match, reportId, studentId }: MatchCardProps) {
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
-      {/* Match Score Badge */}
-      <div className="mb-3 flex items-center justify-between">
-        <span className={`text-2xl font-bold ${scoreColor}`}>
-          {match.match_score}%
-        </span>
-        <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
-          {match.category}
-        </span>
-      </div>
-
-      {/* Image */}
-      {match.image_url ? (
-        <div className="relative mb-3 h-40 w-full overflow-hidden rounded-md border border-gray-200">
-          <Image
-            src={match.image_url}
-            alt={match.item_name}
-            fill
-            className="object-cover"
-          />
-        </div>
-      ) : (
-        <div className="mb-3 flex h-40 w-full items-center justify-center rounded-md border border-gray-200 bg-gray-100">
-          <span className="text-gray-400">No image</span>
-        </div>
-      )}
-
-      {/* Item Name */}
-      <h4 className="mb-2 font-semibold text-gray-900">{match.item_name}</h4>
-
-      {/* Description */}
-      {match.description && (
-        <p className="mb-3 text-sm text-gray-600 line-clamp-2">
-          {match.description}
-        </p>
-      )}
-
-      {/* Metadata */}
-      <div className="space-y-1 text-xs text-gray-500">
-        {match.found_location && (
-          <div className="flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
-            <span>{match.found_location}</span>
+    <div className="group rounded-xl border border-gray-200 bg-white overflow-hidden transition-all hover:shadow-lg hover:border-fetch-red/30">
+      <div className="p-4">
+        {/* Image */}
+        {match.image_url ? (
+          <div className="relative mb-3 h-36 w-full overflow-hidden rounded-lg">
+            <Image
+              src={match.image_url}
+              alt={match.item_name}
+              fill
+              className="object-cover transition-transform group-hover:scale-105"
+            />
+          </div>
+        ) : (
+          <div className="mb-3 flex h-36 w-full items-center justify-center rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
+            <Package className="h-12 w-12 text-gray-300" />
           </div>
         )}
-        <div className="flex items-center gap-1">
-          <User className="h-3 w-3" />
-          <span>Found by {match.security_name}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Calendar className="h-3 w-3" />
-          <span>{new Date(match.found_at).toLocaleDateString()}</span>
-        </div>
-      </div>
 
-      {/* Action Button */}
-      <button
-        onClick={handleClaim}
-        disabled={claiming}
-        className="mt-4 w-full rounded-md bg-fetch-red py-2 text-sm font-medium text-white transition-colors hover:bg-fetch-red/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        {claiming ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Claiming...
-          </>
-        ) : (
-          "Claim This Item"
+        {/* Item Name & Category */}
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">{match.item_name}</h4>
+            <Badge className="bg-fetch-yellow text-gray-900 hover:bg-fetch-yellow shrink-0 text-xs">
+              {match.match_score}% match
+            </Badge>
+          </div>
+          <Badge variant="secondary" className="shrink-0 text-xs">
+            {match.category}
+          </Badge>
+        </div>
+
+        {/* Description */}
+        {match.description && (
+          <p className="mb-3 text-xs text-gray-600 line-clamp-2 min-h-[2.5rem]">
+            {match.description}
+          </p>
         )}
-      </button>
+
+        {/* Metadata */}
+        <div className="space-y-1.5 mb-3 text-xs text-gray-500">
+          {match.found_location && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+              <span className="truncate">{match.found_location}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+            <span className="truncate">Found by {match.security_name}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+            <span>{new Date(match.found_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <Button
+          onClick={handleClaim}
+          disabled={claiming}
+          className="w-full bg-fetch-red hover:bg-fetch-red/90 text-sm"
+          size="sm"
+        >
+          {claiming ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              Claiming...
+            </>
+          ) : (
+            "Claim This Item"
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

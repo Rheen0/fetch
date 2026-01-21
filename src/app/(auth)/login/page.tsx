@@ -1,7 +1,6 @@
 "use client";
 
 import { login } from "../actions";
-import { SubmitButton } from "@/components/auth/submit-button";
 import Link from "next/link";
 import { useEffect, Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -11,14 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Mail, AlertCircle } from "lucide-react";
 import Image from "next/image";
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const message = searchParams.get("message");
   const error = searchParams.get("error");
-  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
@@ -95,6 +93,8 @@ function LoginForm() {
                 required
                 placeholder="juandelacruz@gmail.com"
                 className="h-11"
+                pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                title="Please enter a valid email address"
               />
             </div>
 
@@ -102,28 +102,16 @@ function LoginForm() {
               <Label htmlFor="password" className="text-sm font-medium">
                 Password
               </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  placeholder="••••••••"
-                  className="h-11 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                minLength={6}
+                placeholder="••••••••"
+                className="h-11"
+              />
             </div>
 
             {/* Remember me & Forgot password */}

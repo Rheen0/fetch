@@ -1,7 +1,6 @@
 "use client";
 
 import { signup } from "../actions";
-import { SubmitButton } from "@/components/auth/submit-button";
 import Link from "next/link";
 import { useEffect, Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -11,13 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import Image from "next/image";
 
 function SignupForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (error) {
@@ -75,6 +73,8 @@ function SignupForm() {
                 required
                 placeholder="juandelacruz@gmail.com"
                 className="h-11"
+                pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                title="Please enter a valid email address"
               />
               <p className="text-xs text-muted-foreground">
                 Use your personal or institutional email
@@ -85,29 +85,16 @@ function SignupForm() {
               <Label htmlFor="password" className="text-sm font-medium">
                 Password
               </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  placeholder="••••••••"
-                  className="h-11 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                placeholder="••••••••"
+                className="h-11"
+              />
               <p className="text-xs text-muted-foreground">
                 Must be at least 8 characters
               </p>

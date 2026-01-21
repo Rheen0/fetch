@@ -15,6 +15,11 @@ export async function signup(formData: FormData) {
     return redirect("/signup?error=Please fill in all fields");
   }
 
+  // Validate password length
+  if (password.length < 8) {
+    return redirect("/signup?error=Password must be at least 8 characters");
+  }
+
   // Sign up the user
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -26,7 +31,20 @@ export async function signup(formData: FormData) {
 
   if (error) {
     console.error("Signup error:", error);
+    
+    // Handle specific error cases
+    if (error.message.toLowerCase().includes("already registered") || 
+        error.message.toLowerCase().includes("already exists") ||
+        error.message.toLowerCase().includes("user already registered")) {
+      return redirect("/signup?error=This email is already registered. Please log in instead.");
+    }
+    
     return redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Check if user already exists (Supabase sometimes returns success for existing users)
+  if (data.user && !data.user.identities?.length) {
+    return redirect("/signup?error=This email is already registered. Please log in instead.");
   }
 
   if (!data.user) {
@@ -66,6 +84,15 @@ export async function login(formData: FormData) {
 
   if (error) {
     console.error("Login error:", error);
+    
+    // Provide user-friendly error messages
+    if (error.message.toLowerCase().includes("invalid login credentials")) {
+      return redirect("/login?error=Invalid email or password");
+    }
+    if (error.message.toLowerCase().includes("email not confirmed")) {
+      return redirect("/login?error=Please confirm your email address first");
+    }
+    
     return redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 

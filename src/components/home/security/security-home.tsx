@@ -89,7 +89,7 @@ export function SecurityHome({
           .from("founditem")
           .select("found_id", { count: "exact", head: true })
           .eq("security_id", securityId)
-          .eq("status", "claimed"),
+          .eq("status", "returned"),
       ]);
 
       setStats({

@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { StudentLayout } from "@/components/layouts/student-layout";
 import { ReportLostModal } from "@/components/modals/report-lost-modal";
+import { EditLostModal } from "@/components/modals/edit-lost-modal";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,10 +32,13 @@ import {
   XCircle,
   RotateCcw,
   Eye,
+  Pencil,
+  Trash,
 } from "lucide-react";
 import {
   cancelLostReport,
   reactivateLostReport,
+  deleteLostReport,
 } from "@/app/dashboard/reports/actions";
 import { StatsSkeleton } from "@/components/skeletons/stats-skeleton";
 import { ReportListSkeleton } from "@/components/skeletons/report-card-skeleton";
@@ -57,6 +61,7 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
   const [closedReports, setClosedReports] = useState<ReportWithMatches[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<LostItemReport | null>(null);
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     searchQuery: "",
     category: "",
@@ -70,6 +75,10 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
     reportId: number | null;
   }>({ open: false, reportId: null });
   const [reactivateDialog, setReactivateDialog] = useState<{
+    open: boolean;
+    reportId: number | null;
+  }>({ open: false, reportId: null });
+  const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     reportId: number | null;
   }>({ open: false, reportId: null });
@@ -175,6 +184,21 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
     }
 
     setReactivateDialog({ open: false, reportId: null });
+  };
+
+  const handleDeleteReport = async () => {
+    if (!deleteDialog.reportId) return;
+
+    const result = await deleteLostReport(deleteDialog.reportId);
+
+    if (result.success) {
+      toast.success("Report deleted successfully");
+      fetchReports();
+    } else {
+      toast.error(result.error || "Failed to delete report");
+    }
+
+    setDeleteDialog({ open: false, reportId: null });
   };
 
   if (loading) {
@@ -316,6 +340,7 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
                       reportId: report.report_id,
                     })
                   }
+                  onEdit={() => setEditingReport(report)}
                 />
               ))
             )}
@@ -343,6 +368,12 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
                   report={report}
                   onReactivate={() =>
                     setReactivateDialog({
+                      open: true,
+                      reportId: report.report_id,
+                    })
+                  }
+                  onDelete={() =>
+                    setDeleteDialog({
                       open: true,
                       reportId: report.report_id,
                     })
@@ -408,6 +439,42 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) =>
+          setDeleteDialog({ open, reportId: deleteDialog.reportId })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this report and all associated matches. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteReport}
+              className="bg-fetch-red hover:bg-fetch-red/90"
+            >
+              Delete Report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Lost Modal */}
+      {editingReport && (
+        <EditLostModal
+          report={editingReport}
+          studentId={studentId}
+          onClose={() => setEditingReport(null)}
+          onSuccess={fetchReports}
+        />
+      )}
+
       {/* Report Lost Modal */}
       {isModalOpen && (
         <ReportLostModal
@@ -423,9 +490,11 @@ interface ReportCardProps {
   report: ReportWithMatches;
   onCancel?: () => void;
   onReactivate?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-function ReportCard({ report, onCancel, onReactivate }: ReportCardProps) {
+function ReportCard({ report, onCancel, onReactivate, onEdit, onDelete }: ReportCardProps) {
   const reportedDate = new Date(report.reported_at).toLocaleDateString(
     "en-US",
     {
@@ -532,6 +601,15 @@ function ReportCard({ report, onCancel, onReactivate }: ReportCardProps) {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={onEdit}
+                    className="text-gray-600"
+                  >
+                    <Pencil className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={onCancel}
                     className="text-gray-600"
                   >
@@ -540,15 +618,26 @@ function ReportCard({ report, onCancel, onReactivate }: ReportCardProps) {
                   </Button>
                 </>
               ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onReactivate}
-                  className="text-fetch-red border-fetch-red hover:bg-fetch-red/10"
-                >
-                  <RotateCcw className="w-4 h-4 mr-1" />
-                  Reactivate
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onReactivate}
+                    className="text-fetch-red border-fetch-red hover:bg-fetch-red/10"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-1" />
+                    Reactivate
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onDelete}
+                    className="text-fetch-red border-fetch-red hover:bg-fetch-red/10"
+                  >
+                    <Trash className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </>
               )}
             </div>
           </div>

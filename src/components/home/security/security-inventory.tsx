@@ -3,17 +3,30 @@
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { SecurityLayout } from "@/components/layouts/security-layout";
+import { EditFoundModal } from "@/components/modals/edit-found-modal";
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Package, User, Bell, ArrowLeft, Filter, Calendar, MapPin, CheckCircle2 } from "lucide-react";
+import { Search, Package, User, Bell, ArrowLeft, Filter, Calendar, MapPin, CheckCircle2, Pencil, Trash } from "lucide-react";
 import { SearchFilters, type SearchFilters as SearchFiltersType } from "@/components/search/search-filters";
 import { filterFoundItems, sortByRelevance } from "@/lib/search-utils";
+import { deleteFoundItem } from "@/app/dashboard/inventory/actions";
 import type { FoundItem } from "@/lib/types";
 
 interface SecurityInventoryProps {
@@ -28,6 +41,7 @@ export function SecurityInventory({
   avatarUrl,
 }: SecurityInventoryProps) {
   const [items, setItems] = useState<FoundItem[]>([]);
+  const [editingItem, setEditingItem] = useState<FoundItem | null>(null);
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     searchQuery: "",
     category: "",
@@ -38,6 +52,10 @@ export function SecurityInventory({
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    foundId: number | null;
+  }>({ open: false, foundId: null });
 
   // Filter and sort items based on search criteria
   const filteredItems = useMemo(() => {
@@ -74,6 +92,21 @@ export function SecurityInventory({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!deleteDialog.foundId) return;
+
+    const result = await deleteFoundItem(deleteDialog.foundId);
+
+    if (result.success) {
+      toast.success("Item deleted successfully");
+      fetchItems();
+    } else {
+      toast.error(result.error || "Failed to delete item");
+    }
+
+    setDeleteDialog({ open: false, foundId: null });
   };
 
   const stats = {
@@ -192,7 +225,12 @@ export function SecurityInventory({
               </div>
             ) : displayedItems.length > 0 ? (
               displayedItems.map((item) => (
-                <FoundItemCard key={item.found_id} item={item} />
+                <FoundItemCard 
+                  key={item.found_id} 
+                  item={item}
+                  onEdit={() => setEditingItem(item)}
+                  onDelete={() => setDeleteDialog({ open: true, foundId: item.found_id })}
+                />
               ))
             ) : (
               <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
@@ -302,15 +340,53 @@ export function SecurityInventory({
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) =>
+          setDeleteDialog({ open, foundId: deleteDialog.foundId })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Found Item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this item and all associated claims and matches. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteItem}
+              className="bg-fetch-red hover:bg-fetch-red/90"
+            >
+              Delete Item
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Found Modal */}
+      {editingItem && (
+        <EditFoundModal
+          item={editingItem}
+          securityId={securityId}
+          onClose={() => setEditingItem(null)}
+          onSuccess={fetchItems}
+        />
+      )}
     </SecurityLayout>
   );
 }
 
 interface FoundItemCardProps {
   item: FoundItem;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-function FoundItemCard({ item }: FoundItemCardProps) {
+function FoundItemCard({ item, onEdit, onDelete }: FoundItemCardProps) {
   const foundDate = new Date(item.found_at).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -388,7 +464,7 @@ function FoundItemCard({ item }: FoundItemCardProps) {
               </p>
             )}
 
-            <div className="space-y-1 text-sm text-gray-600">
+            <div className="space-y-1 text-sm text-gray-600 mb-3">
               {item.found_location && (
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-gray-400" />
@@ -400,6 +476,29 @@ function FoundItemCard({ item }: FoundItemCardProps) {
                 <Calendar className="w-4 h-4 text-gray-400" />
                 <span>Found: {foundDate}</span>
               </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onEdit}
+                className="text-gray-600"
+              >
+                <Pencil className="w-4 h-4 mr-1" />
+                Edit
+              </Button>
+              {item.status === "returned" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onDelete}
+                  className="text-fetch-red border-fetch-red hover:bg-fetch-red/10"
+                >
+                  <Trash className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
+              )}
             </div>
           </div>
         </div>

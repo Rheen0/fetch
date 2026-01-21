@@ -34,6 +34,7 @@ import {
   Eye,
   Pencil,
   Trash,
+  ClipboardList,
 } from "lucide-react";
 import {
   cancelLostReport,
@@ -243,7 +244,7 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm" className="p-2">
@@ -251,7 +252,10 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
                 </Button>
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">My Reports</h1>
+                <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-fetch-red" />
+                  My Reports
+                </h1>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Track and manage your lost item reports
                 </p>
@@ -317,8 +321,8 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
           <TabsContent value="active" className="space-y-4 mt-6">
             {filteredActiveReports.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-fetch-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-fetch-red" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {activeReports.length === 0 ? "No active reports" : "No matching results"}
@@ -349,8 +353,8 @@ export function StudentReports({ studentId, firstName, avatarUrl }: StudentRepor
           <TabsContent value="closed" className="space-y-4 mt-6">
             {filteredClosedReports.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-fetch-yellow/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-fetch-yellow" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {closedReports.length === 0 ? "No closed reports" : "No matching results"}

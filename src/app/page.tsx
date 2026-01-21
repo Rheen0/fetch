@@ -175,9 +175,7 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Header */}
-      <header className="fixed top-0 right-0 p-6 z-50">
-        <AnimatedThemeToggler className="p-2 rounded-lg border bg-background/80 backdrop-blur hover:bg-accent transition-colors" />
-      </header>
+    
 
       {/* Full Screen Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6">
@@ -342,7 +340,7 @@ export default function LandingPage() {
             Ready to get started?
           </h2>
           <p className="text-muted-foreground text-xl">
-            Join thousands of users who trust Fetch to reunite them with their
+            Join users who trust Fetch to reunite them with their
             lost items
           </p>
           {!user && (
